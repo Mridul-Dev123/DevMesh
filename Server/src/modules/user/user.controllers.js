@@ -1,4 +1,4 @@
-import { ApiError, ApiResponse, asyncHandler } from '../../utils';
+import { ApiError, ApiResponse, asyncHandler } from '../../core/index.js';
 import userService from './user.service.js';
 import passport from 'passport';
 const register = asyncHandler(async (req, res) => {

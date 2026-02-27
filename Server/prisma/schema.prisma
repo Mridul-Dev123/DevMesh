@@ -1,12 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  
 }
 
 datasource db {
@@ -14,91 +8,72 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User{
-  id        String   @id @default(uuid())
-  username  String   @unique
-  email     String   
+model User {
+  id        String    @id @default(uuid())
+  username  String    @unique
+  email     String
   password  String?
-  githubId  String?  @unique
+  githubId  String?   @unique
   avatarUrl String?
-  bio       String?  @db.VarChar(160)
+  bio       String?   @db.VarChar(160)
   techStack String[]
-
-  posts     Post[]
-  comments  Comment[]
-  likes     Like[]
-
-  following Follow[] @relation("UserFollowing")
-  followers Follow[] @relation("UserFollowers")
-
   createdAt DateTime  @default(now())
+  comments  Comment[]
+  following Follow[]  @relation("UserFollowing")
+  followers Follow[]  @relation("UserFollowers")
+  likes     Like[]
+  posts     Post[]
 }
 
-
-model Follow{
-  id        String      @id @default(uuid())
-  followerId    String 
-  followingId   String
-  status FollowStatus   @default(PENDING)
-  follower    User      @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User      @relation("UserFollowers", fields: [followingId], references:[id], onDelete:Cascade)
-
-  createdAt   DateTime  @default(now())
+model Follow {
+  id          String       @id @default(uuid())
+  followerId  String
+  followingId String
+  status      FollowStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  follower    User         @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User         @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
 }
 
-enum FollowStatus{
-  PENDING
-  ACCEPTED
-}
-
-model Post{
-  id        String   @id @default(uuid())
-  content   String   @db.VarChar(500)
-  codeSnippet String?  @db.Text
+model Post {
+  id          String    @id @default(uuid())
+  content     String    @db.VarChar(500)
+  codeSnippet String?
   language    String?
   mediaUrl    String?
   reportUrl   String?
-
   authorId    String
-  author      User    @relation(fields:[authorId], references:[id], onDelete:Cascade)
-
-
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   comments    Comment[]
   likes       Like[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
-model   Comment{
-  id      String   @id @default(uuid())
-  content String    @db.VarChar(280)
-
-
+model Comment {
+  id        String   @id @default(uuid())
+  content   String   @db.VarChar(280)
   authorId  String
   postId    String
-
-  author    User     @relation(fields:[authorId], references:[id], onDelete:Cascade)
-  post      Post     @relation(fields:[postId], references:[id], onDelete:Cascade)
-
-  createdAt   DateTime    @default(now())
-
+  createdAt DateTime @default(now())
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
-model Like{
-  id      String    @id @default(uuid())
-
-
-  userId  String
-  postId  String
-
-  user    User     @relation(fields:[userId], references:[id], onDelete:Cascade)
-  post    Post     @relation(fields:[postId], references: [id], onDelete:Cascade)
-
-  createdAt   DateTime  @default(now())
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
 }
 
+enum FollowStatus {
+  PENDING
+  ACCEPTED
+}

@@ -1,4 +1,4 @@
-import { ApiError, asyncHandler } from '../core';
+import { ApiError, asyncHandler } from '../core/index.js';
 const authenticate = asyncHandler(async (req, res, next) => {
   if (req.isAuthenticated()) {
     return next();

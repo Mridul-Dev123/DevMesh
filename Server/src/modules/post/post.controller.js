@@ -1,4 +1,4 @@
-import { ApiResponse, asyncHandler } from '../../core';
+import { ApiResponse, asyncHandler } from '../../core/index.js';
 import postService from './post.service.js';
 
 const createPost = asyncHandler(async (req, res) => {

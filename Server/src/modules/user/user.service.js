@@ -1,4 +1,4 @@
-import { ApiError } from '../../core';
+import { ApiError } from '../../core/index.js';
 import userRepository from './user.repository.js';
 import bcrypt from 'bcrypt';
 
