@@ -3,6 +3,9 @@ import session from 'express-session';
 import passport from './config/passport.js';
 import userRouter from './modules/user/user.route.js';
 import msgRouter from './modules/post/post.route.js';
+import likeRouter from './modules/like/like.route.js';
+import commentRouter from './modules/comment/comment.route.js';
+import followRouter from './modules/Follow/follow.route.js';
 import cors from 'cors';
 import ApiError from './core/ApiError.js';
 import connectPgSimple from 'connect-pg-simple';
@@ -58,6 +61,9 @@ app.get('/api', (req, res) => {
 });
 app.use('/api/auth', userRouter);
 app.use('/api/post', msgRouter);
+app.use('/api/like', likeRouter);
+app.use('/api/comment', commentRouter);
+app.use('/api/follow', followRouter);
 
 app.use((req, res, next) => {
   next(new ApiError(404, 'Route not found'));
