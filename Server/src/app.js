@@ -6,6 +6,7 @@ import msgRouter from './modules/post/post.route.js';
 import likeRouter from './modules/like/like.route.js';
 import commentRouter from './modules/comment/comment.route.js';
 import followRouter from './modules/Follow/follow.route.js';
+import chatRouter from './modules/chat/chat.route.js';
 import cors from 'cors';
 import ApiError from './core/ApiError.js';
 import connectPgSimple from 'connect-pg-simple';
@@ -64,6 +65,7 @@ app.use('/api/post', msgRouter);
 app.use('/api/like', likeRouter);
 app.use('/api/comment', commentRouter);
 app.use('/api/follow', followRouter);
+app.use('/api/chat', chatRouter);
 
 app.use((req, res, next) => {
   next(new ApiError(404, 'Route not found'));

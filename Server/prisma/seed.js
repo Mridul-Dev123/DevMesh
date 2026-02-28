@@ -3,7 +3,18 @@ import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
 
-const TECH_STACKS = ['JavaScript', 'TypeScript', 'Python', 'Rust', 'Go', 'React', 'Node.js', 'PostgreSQL', 'Docker', 'AWS'];
+const TECH_STACKS = [
+  'JavaScript',
+  'TypeScript',
+  'Python',
+  'Rust',
+  'Go',
+  'React',
+  'Node.js',
+  'PostgreSQL',
+  'Docker',
+  'AWS',
+];
 const LANGUAGES = ['javascript', 'typescript', 'python', 'rust', 'go', 'java', 'cpp', 'bash'];
 const CODE_SNIPPETS = [
   `const fetchData = async (url) => {\n  const res = await fetch(url);\n  return res.json();\n};`,
@@ -16,6 +27,8 @@ async function main() {
   console.log('🌱 Seeding database...');
 
   // 1️⃣ Clear all tables in reverse dependency order
+  await prisma.message.deleteMany();
+  await prisma.conversation.deleteMany();
   await prisma.like.deleteMany();
   await prisma.comment.deleteMany();
   await prisma.follow.deleteMany();
@@ -30,7 +43,10 @@ async function main() {
   for (let i = 0; i < 8; i++) {
     const user = await prisma.user.create({
       data: {
-        username: faker.internet.username().toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+        username: faker.internet
+          .username()
+          .toLowerCase()
+          .replace(/[^a-z0-9_]/g, '_'),
         email: faker.internet.email(),
         bio: faker.lorem.sentence({ min: 5, max: 20 }).substring(0, 160),
         avatarUrl: faker.image.avatar(),
@@ -135,6 +151,61 @@ async function main() {
   }
 
   console.log(`✅ ${commentCount} comments created`);
+
+  // 7️⃣ Create Conversations & Messages
+  const conversationPairs = new Set();
+  const conversations = [];
+
+  // Pick ~6 random unique user pairs
+  for (let i = 0; i < 6; i++) {
+    const [userA, userB] = faker.helpers.arrayElements(users, 2);
+    if (userA.id === userB.id) continue;
+
+    // Keep pairs order-independent to avoid duplicates
+    const key = [userA.id, userB.id].sort().join('-');
+    if (conversationPairs.has(key)) continue;
+    conversationPairs.add(key);
+
+    const conversation = await prisma.conversation.create({
+      data: {
+        participantA: userA.id,
+        participantB: userB.id,
+      },
+    });
+
+    conversations.push({ conversation, userA, userB });
+  }
+
+  console.log(`✅ ${conversations.length} conversations created`);
+
+  // Seed messages inside each conversation
+  let messageCount = 0;
+
+  for (const { conversation, userA, userB } of conversations) {
+    const messageCount_this = faker.number.int({ min: 3, max: 10 });
+    const participants = [userA, userB];
+
+    for (let m = 0; m < messageCount_this; m++) {
+      const sender = faker.helpers.arrayElement(participants);
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: sender.id,
+          content: faker.lorem.sentence().substring(0, 1000),
+          isRead: faker.datatype.boolean(),
+        },
+      });
+      messageCount++;
+    }
+
+    // Bump conversation updatedAt to match last message
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { updatedAt: new Date() },
+    });
+  }
+
+  console.log(`✅ ${messageCount} messages created`);
   console.log('🌱 Seeding done!');
 }
 
