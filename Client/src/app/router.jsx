@@ -6,6 +6,7 @@ import GuestRoute from "../components/GuestRoute.jsx";
 const LoginPage = lazy(() => import("../features/auth/LoginPage.jsx"));
 const RegisterPage = lazy(() => import("../features/auth/RegisterPage.jsx"));
 const FeedPage = lazy(() => import("../features/posts/FeedPage.jsx"));
+const PostPage = lazy(() => import("../features/posts/PostPage.jsx"));
 
 const router = createBrowserRouter([
     // Root → redirect to feed (ProtectedRoute will bounce to /login if not authed)
@@ -43,6 +44,16 @@ const router = createBrowserRouter([
             <ProtectedRoute>
                 <Suspense fallback={<div>Loading...</div>}>
                     <FeedPage />
+                </Suspense>
+            </ProtectedRoute>
+        ),
+    },
+    {
+        path: "/post/:id",
+        element: (
+            <ProtectedRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                    <PostPage />
                 </Suspense>
             </ProtectedRoute>
         ),
