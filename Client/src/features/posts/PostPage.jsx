@@ -19,7 +19,7 @@ const PostPage = () => {
             <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
                 <button
                     onClick={() => navigate(-1)}
-                    className="text-sm text-gray-400 hover:text-indigo-400 flex items-center gap-1 transition-colors"
+                    className="text-sm text-gray-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
                 >
                     ← Back
                 </button>

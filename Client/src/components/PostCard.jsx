@@ -36,7 +36,7 @@ const PostCard = ({ post }) => {
                 >
                     <Avatar user={post.author} size={40} />
                     <div>
-                        <p className="text-sm font-semibold text-gray-100 group-hover:text-indigo-400 transition-colors">
+                        <p className="text-sm font-semibold text-gray-100 group-hover:text-cyan-300 transition-colors">
                             {post.author?.username}
                         </p>
                         <p className="text-xs text-gray-500">{formatRelative(post.createdAt)}</p>
@@ -63,7 +63,7 @@ const PostCard = ({ post }) => {
 
                 {/* Code snippet */}
                 {post.codeSnippet && (
-                    <pre className="bg-gray-950 border border-gray-800 rounded-xl p-4 text-xs text-indigo-200 overflow-x-auto font-mono mb-3">
+                    <pre className="bg-gray-950 border border-gray-800 rounded-xl p-4 text-xs text-cyan-100 overflow-x-auto font-mono mb-3">
                         <code>{post.codeSnippet}</code>
                     </pre>
                 )}

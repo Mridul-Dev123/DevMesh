@@ -18,7 +18,7 @@ const CommentList = ({ postId, commentCount = 0 }) => {
     const createComment = useCreateComment(postId);
     const deleteComment = useDeleteComment(postId);
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm();
+    const { register, handleSubmit, reset } = useForm();
 
     const onSubmit = ({ content }) => {
         createComment.mutate({ content }, { onSuccess: () => reset() });
@@ -29,7 +29,7 @@ const CommentList = ({ postId, commentCount = 0 }) => {
             {/* Toggle button */}
             <button
                 onClick={() => setOpen((v) => !v)}
-                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-indigo-400 transition-colors"
+                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-cyan-300 transition-colors"
             >
                 <span>💬</span>
                 <span>{commentCount} {commentCount === 1 ? "comment" : "comments"}</span>
@@ -47,7 +47,7 @@ const CommentList = ({ postId, commentCount = 0 }) => {
                             <div key={comment.id} className="flex gap-2 items-start group">
                                 <Avatar user={comment.author} size={28} />
                                 <div className="flex-1 bg-gray-800/60 rounded-lg px-3 py-2">
-                                    <p className="text-xs font-semibold text-indigo-300">
+                                    <p className="text-xs font-semibold text-cyan-300">
                                         @{comment.author?.username}
                                     </p>
                                     <p className="text-sm text-gray-200 mt-0.5">{comment.content}</p>
@@ -73,13 +73,13 @@ const CommentList = ({ postId, commentCount = 0 }) => {
                             <div className="flex-1 flex gap-2">
                                 <input
                                     placeholder="Write a comment…"
-                                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
                                     {...register("content", { required: true, minLength: 1 })}
                                 />
                                 <button
                                     type="submit"
                                     disabled={createComment.isPending}
-                                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors disabled:opacity-50"
+                                    className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-sm font-semibold transition-colors disabled:opacity-50"
                                 >
                                     {createComment.isPending ? "…" : "Post"}
                                 </button>

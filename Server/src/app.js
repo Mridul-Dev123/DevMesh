@@ -28,6 +28,18 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ── Request logger ────────────────────────────────────────────────────────────
+app.use((req, _res, next) => {
+  const hasBody = !['GET', 'HEAD', 'DELETE'].includes(req.method);
+  console.log(`\n[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  if (hasBody && req.body && Object.keys(req.body).length > 0) {
+    console.log('  Body:', JSON.stringify(req.body, null, 2));
+  }
+  next();
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
+
 const { Pool } = pkg;
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,

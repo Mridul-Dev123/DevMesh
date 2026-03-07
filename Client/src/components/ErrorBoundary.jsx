@@ -28,10 +28,20 @@ class ErrorBoundary extends Component {
     render() {
         if (this.state.hasError) {
             return (
-                <div role="alert">
-                    <h2>Something went wrong</h2>
-                    <p>{this.state.error?.message ?? "An unexpected error occurred."}</p>
-                    <button onClick={this.handleReset}>Go home</button>
+                <div className="flex min-h-screen items-center justify-center px-4" role="alert">
+                    <div className="w-full max-w-md rounded-2xl border border-red-500/40 bg-slate-950/90 p-6 shadow-xl shadow-slate-900/60">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-red-300">Unexpected error</p>
+                        <h2 className="mt-2 text-2xl font-extrabold text-slate-100">Something went wrong</h2>
+                        <p className="mt-2 text-sm text-slate-300">
+                            {this.state.error?.message ?? "An unexpected error occurred."}
+                        </p>
+                        <button
+                            onClick={this.handleReset}
+                            className="mt-5 rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition-colors hover:bg-cyan-400"
+                        >
+                            Go home
+                        </button>
+                    </div>
                 </div>
             );
         }
