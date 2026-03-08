@@ -35,4 +35,53 @@ const register = async (data) => {
   return safeUser;
 };
 
-export default { register };
+/**
+ * Get a user profile with aggregated stats
+ * @param {string} userId - Target user ID
+ */
+const getProfile = async (userId) => {
+  const profile = await userRepository.getProfileById(userId);
+
+  if (!profile) {
+    throw new ApiError(404, 'User not found');
+  }
+
+  const stats = await userRepository.getProfileStats(userId);
+  return { ...profile, stats };
+};
+
+/**
+ * Update authenticated user's profile fields
+ * @param {string} userId - Authenticated user id
+ * @param {{ bio?: string, techStack?: string[]|string, avatarUrl?: string|null }} data
+ */
+const updateProfile = async (userId, data) => {
+  const updateData = {};
+
+  if (typeof data.bio === 'string') {
+    updateData.bio = data.bio.trim();
+  }
+
+  if (Array.isArray(data.techStack)) {
+    updateData.techStack = data.techStack
+      .map((item) => String(item).trim())
+      .filter(Boolean);
+  } else if (typeof data.techStack === 'string') {
+    updateData.techStack = data.techStack
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  if (typeof data.avatarUrl === 'string' || data.avatarUrl === null) {
+    updateData.avatarUrl = data.avatarUrl;
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    throw new ApiError(400, 'No valid profile fields provided');
+  }
+
+  return userRepository.updateProfile(userId, updateData);
+};
+
+export default { register, getProfile, updateProfile };

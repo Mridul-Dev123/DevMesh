@@ -1,5 +1,15 @@
 import prisma from '../../config/prisma.js';
 
+const safeUserSelect = {
+  id: true,
+  username: true,
+  email: true,
+  avatarUrl: true,
+  bio: true,
+  techStack: true,
+  createdAt: true,
+};
+
 /**
  * Find a user by email address
  * @param {string} email - Email to search
@@ -27,6 +37,45 @@ const getUser = (id) => {
 };
 
 /**
+ * Get a user profile by id (without password)
+ * @param {string} id - User UUID
+ * @returns {Promise<object|null>} Sanitized user profile
+ */
+const getProfileById = (id) => {
+  return prisma.user.findUnique({
+    where: { id },
+    select: safeUserSelect,
+  });
+};
+
+/**
+ * Update profile fields for a user and return sanitized user data
+ * @param {string} id - User UUID
+ * @param {{ bio?: string, techStack?: string[], avatarUrl?: string|null }} data
+ */
+const updateProfile = (id, data) => {
+  return prisma.user.update({
+    where: { id },
+    data,
+    select: safeUserSelect,
+  });
+};
+
+/**
+ * Aggregate profile stats for a user
+ * @param {string} id - User UUID
+ */
+const getProfileStats = async (id) => {
+  const [posts, followers, following] = await Promise.all([
+    prisma.post.count({ where: { authorId: id } }),
+    prisma.follow.count({ where: { followingId: id, status: 'ACCEPTED' } }),
+    prisma.follow.count({ where: { followerId: id, status: 'ACCEPTED' } }),
+  ]);
+
+  return { posts, followers, following };
+};
+
+/**
  * Create a new user record
  * @param {object} data - User data
  * @param {string} data.username - Username
@@ -43,4 +92,7 @@ export default {
   findByUsername,
   createUser,
   getUser,
+  getProfileById,
+  updateProfile,
+  getProfileStats,
 };

@@ -8,10 +8,10 @@ const router = Router();
 router.post('/', authenticate, postController.createPost);
 /** @route GET    /api/post          - Get global feed (query: page, limit) */
 router.get('/', authenticate, postController.getFeed);
-/** @route GET    /api/post/:id      - Get a single post by ID */
-router.get('/:id', authenticate, postController.getPost);
 /** @route GET    /api/post/user/:userId - Get posts by a specific user (query: skip, take) */
 router.get('/user/:userId', authenticate, postController.getUserPosts);
+/** @route GET    /api/post/:id      - Get a single post by ID */
+router.get('/:id', authenticate, postController.getPost);
 /** @route PATCH  /api/post/:id      - Update a post (author only) */
 router.patch('/:id', authenticate, postController.updatePost);
 /** @route DELETE /api/post/:id      - Delete a post (author only) */

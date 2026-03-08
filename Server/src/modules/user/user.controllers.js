@@ -1,6 +1,7 @@
 import { ApiError, ApiResponse, asyncHandler } from '../../core/index.js';
 import userService from './user.service.js';
 import passport from 'passport';
+import { uploadImageBuffer } from '../../utils/cloudinary.js';
 
 /**
  * Register a new user account
@@ -67,6 +68,40 @@ const logout = asyncHandler(async (req, res, next) => {
   return res.status(200).json(new ApiResponse(200, null, 'Logged out successfully'));
 });
 
-const userController = { register, login, getMe, logout };
+/**
+ * Get a user's public profile by user id
+ * @route GET /api/auth/profile/:userId
+ * @access Private
+ */
+const getProfile = asyncHandler(async (req, res) => {
+  const profile = await userService.getProfile(req.params.userId);
+  return res.status(200).json(new ApiResponse(200, profile, 'Profile fetched successfully'));
+});
+
+/**
+ * Update the authenticated user's profile
+ * @route PATCH /api/auth/profile
+ * @access Private
+ */
+const updateProfile = asyncHandler(async (req, res) => {
+  const payload = { ...req.body };
+
+  if (req.file?.buffer) {
+    try {
+      const cloudinaryResult = await uploadImageBuffer(req.file.buffer, {
+        folder: 'devmesh/profiles',
+        publicId: `${req.user.id}_${Date.now()}`,
+      });
+      payload.avatarUrl = cloudinaryResult.secure_url;
+    } catch (error) {
+      throw new ApiError(500, 'Avatar upload failed');
+    }
+  }
+
+  const updated = await userService.updateProfile(req.user.id, payload);
+  return res.status(200).json(new ApiResponse(200, updated, 'Profile updated successfully'));
+});
+
+const userController = { register, login, getMe, logout, getProfile, updateProfile };
 
 export default userController;

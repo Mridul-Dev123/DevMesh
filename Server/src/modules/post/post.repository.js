@@ -54,6 +54,21 @@ const getPostsByUser = async (userId, { skip = 0, take = 20 }) => {
     where: {
       authorId: userId,
     },
+    include: {
+      author: {
+        select: {
+          id: true,
+          username: true,
+          avatarUrl: true,
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+          comments: true,
+        },
+      },
+    },
     orderBy: {
       createdAt: 'desc',
     },

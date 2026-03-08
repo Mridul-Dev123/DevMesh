@@ -47,7 +47,7 @@ const getFeed = asyncHandler(async (req, res) => {
  * @returns {200} Paginated list of the user's posts
  */
 const getUserPosts = asyncHandler(async (req, res) => {
-  const posts = await postService.getUserPosts(req.user.id, req.query);
+  const posts = await postService.getUserPosts(req.params.userId, req.query);
   return res.status(200).json(new ApiResponse(200, posts, 'User Posts Fetched Successfully'));
 });
 /**

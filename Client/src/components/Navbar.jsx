@@ -1,5 +1,6 @@
 import { useAuth } from "../hooks/useAuth";
 import { useLogout } from "../features/auth/auth.hooks";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const { user } = useAuth();
@@ -15,9 +16,12 @@ const Navbar = () => {
 
         {user ? (
           <div className="flex items-center gap-2 sm:gap-3">
-            <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-300">
+            <Link
+              to={`/profile/${user.id}`}
+              className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-cyan-500 hover:text-cyan-200"
+            >
               @{user.username}
-            </span>
+            </Link>
             <button
               onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}
