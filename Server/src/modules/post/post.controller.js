@@ -58,7 +58,10 @@ const getUserPosts = asyncHandler(async (req, res) => {
  * @body {string} [content] - Updated post text
  * @returns {200} Updated post
  */
-const updatePost = asyncHandler(async (req, res) => {});
+const updatePost = asyncHandler(async (req, res) => {
+  void req;
+  void res;
+});
 
 /**
  * Delete a post (author only)
@@ -67,6 +70,9 @@ const updatePost = asyncHandler(async (req, res) => {});
  * @param {string} req.params.id - Post ID
  * @returns {200} Deletion confirmation
  */
-const deletePost = asyncHandler(async (req, res) => {});
+const deletePost = asyncHandler(async (req, res) => {
+  void req;
+  void res;
+});
 
 export default { createPost, getUserPosts, getPost, getFeed, updatePost, deletePost };

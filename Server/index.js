@@ -48,7 +48,7 @@ io.on('connection', (socket) => {
     if (!userId || !conversationId || !content) return;
     try {
       const { default: chatService } = await import('./src/modules/chat/chat.service.js');
-      const message = await chatService.sendMessage(conversationId, userId, content, io);
+      await chatService.sendMessage(conversationId, userId, content, io);
       // sendMessage already emits to the room; no extra emit needed here.
     } catch (err) {
       socket.emit('error', { message: err.message });

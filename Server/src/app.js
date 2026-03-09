@@ -37,8 +37,7 @@ app.use((req, _res, next) => {
   }
   next();
 });
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ───────────---─────────────────────────────────────────────────────────────────
 
 const { Pool } = pkg;
 const pool = new Pool({
@@ -84,6 +83,7 @@ app.use((req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
+  void next;
   console.error(err.stack);
 
   if (err instanceof ApiError) {

@@ -13,15 +13,16 @@ import bcrypt from 'bcrypt';
  */
 const register = async (data) => {
   const { username, email, password } = data;
+  console.log(`|| Data Extracted Username:${username}, Email:${email}, Pass:${password}`);
   if (!username || !email || !password) {
     throw new ApiError(400, 'Username, password, email are required');
   }
   let existingUser = await userRepository.findByUsername(username);
   if (existingUser) throw new ApiError(400, 'Username taken');
-
+  console.log('|| Validated Existing Username');
   existingUser = await userRepository.findByEmail(email);
   if (existingUser) throw new ApiError(400, 'Email already exist');
-
+  console.log('|| Validated Existing Useremail');
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await userRepository.createUser({
@@ -30,8 +31,9 @@ const register = async (data) => {
     password: hashedPassword,
   });
 
-  const { password: _, ...safeUser } = user;
-
+  const safeUser = { ...user };
+  delete safeUser.password;
+  console.log(safeUser);
   return safeUser;
 };
 
@@ -63,9 +65,7 @@ const updateProfile = async (userId, data) => {
   }
 
   if (Array.isArray(data.techStack)) {
-    updateData.techStack = data.techStack
-      .map((item) => String(item).trim())
-      .filter(Boolean);
+    updateData.techStack = data.techStack.map((item) => String(item).trim()).filter(Boolean);
   } else if (typeof data.techStack === 'string') {
     updateData.techStack = data.techStack
       .split(',')
@@ -84,4 +84,47 @@ const updateProfile = async (userId, data) => {
   return userRepository.updateProfile(userId, updateData);
 };
 
-export default { register, getProfile, updateProfile };
+/**
+ * Authenticate a user with username/email and password
+ * @param {string} identifier - Username or email
+ * @param {string} password - Plain-text password
+ * @returns {Promise<object|null>} Safe user object, or null when credentials are invalid
+ */
+const authenticateLocal = async (identifier, password) => {
+  const value = String(identifier || '').trim();
+  if (!value || !password) {
+    return null;
+  }
+
+  const user = await userRepository.findByUsernameOrEmail(value);
+  if (!user || !user.password) {
+    return null;
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return null;
+  }
+
+  const safeUser = { ...user };
+  delete safeUser.password;
+  return safeUser;
+};
+
+/**
+ * Get a safe user object for session deserialization
+ * @param {string} id - User UUID
+ * @returns {Promise<object|null>} Safe user object or null if not found
+ */
+const getSafeUserById = async (id) => {
+  const user = await userRepository.getUser(id);
+  if (!user) {
+    return null;
+  }
+
+  const safeUser = { ...user };
+  delete safeUser.password;
+  return safeUser;
+};
+
+export default { register, getProfile, updateProfile, authenticateLocal, getSafeUserById };

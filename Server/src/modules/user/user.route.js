@@ -13,7 +13,12 @@ router.get('/me', authenticate, userController.getMe);
 /** @route GET  /api/auth/profile/:userId - Get profile by user id */
 router.get('/profile/:userId', authenticate, userController.getProfile);
 /** @route PATCH /api/auth/profile   - Update authenticated user's profile */
-router.patch('/profile', authenticate, uploadProfile.single('avatar'), userController.updateProfile);
+router.patch(
+  '/profile',
+  authenticate,
+  uploadProfile.single('avatar'),
+  userController.updateProfile
+);
 /** @route POST /api/auth/logout    - Log out and destroy session */
 router.post('/logout', authenticate, userController.logout);
 

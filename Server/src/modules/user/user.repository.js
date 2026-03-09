@@ -16,7 +16,7 @@ const safeUserSelect = {
  * @returns {Promise<User|null>} The user or null
  */
 const findByEmail = (email) => {
-  return prisma.user.findUnique({ where: { email } });
+  return prisma.user.findFirst({ where: { email } });
 };
 
 /**
@@ -26,6 +26,19 @@ const findByEmail = (email) => {
  */
 const findByUsername = (username) => {
   return prisma.user.findUnique({ where: { username } });
+};
+
+/**
+ * Find a user by either username or email
+ * @param {string} identifier - Username or email
+ * @returns {Promise<User|null>} The user or null
+ */
+const findByUsernameOrEmail = (identifier) => {
+  return prisma.user.findFirst({
+    where: {
+      OR: [{ username: identifier }, { email: identifier }],
+    },
+  });
 };
 /**
  * Find a user by their primary ID
@@ -90,6 +103,7 @@ const createUser = (data) => {
 export default {
   findByEmail,
   findByUsername,
+  findByUsernameOrEmail,
   createUser,
   getUser,
   getProfileById,

@@ -1,21 +1,16 @@
-import userRepository from '../modules/user/user.repository.js';
+import userService from '../modules/user/user.service.js';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
-import bcrypt from 'bcrypt';
 passport.use(
   new LocalStrategy(
-    { usernameField: 'username', passwordField: 'password' },
-    async (username, password, done) => {
+    { usernameField: 'identifier', passwordField: 'password' },
+    async (identifier, password, done) => {
       try {
-        const user = await userRepository.findByUsername(username);
+        const user = await userService.authenticateLocal(identifier, password);
         if (!user) {
-          return done(null, false, { message: 'User not found' });
+          return done(null, false, { message: 'Invalid credentials' });
         }
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if (!isMatch) {
-          return done(null, false, { message: 'Incorrect password' });
-        }
+        console.log(`|| ${identifier} logged in Successfully`);
         return done(null, user);
       } catch (err) {
         return done(err);
@@ -30,10 +25,15 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
   try {
-    const user = await userRepository.getUser(id);
-    done(null, user);
+    const user = await userService.getSafeUserById(id);
+    if (!user) {
+      // Stale session: user was deleted or no longer exists.
+      return done(null, false);
+    }
+
+    return done(null, user);
   } catch (err) {
-    done(err);
+    return done(err);
   }
 });
 

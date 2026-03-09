@@ -26,6 +26,11 @@ const register = asyncHandler(async (req, res) => {
  * @returns {200} Authenticated user object
  */
 const login = asyncHandler(async (req, res, next) => {
+  // Backward compatible: allow { username, password } or { email, password } payloads.
+  if (!req.body.identifier) {
+    req.body.identifier = req.body.username || req.body.email;
+  }
+
   passport.authenticate('local', (err, user, info) => {
     if (err) return next(err);
     if (!user) {
@@ -59,13 +64,18 @@ const getMe = asyncHandler(async (req, res) => {
 const logout = asyncHandler(async (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
-  });
-  req.session.destroy((err) => {
-    if (err) return next(err);
-  });
-  res.clearCookie('connect.sid');
 
-  return res.status(200).json(new ApiResponse(200, null, 'Logged out successfully'));
+    if (!req.session) {
+      res.clearCookie('connect.sid');
+      return res.status(200).json(new ApiResponse(200, null, 'Logged out successfully'));
+    }
+
+    req.session.destroy((err) => {
+      if (err) return next(err);
+      res.clearCookie('connect.sid');
+      return res.status(200).json(new ApiResponse(200, null, 'Logged out successfully'));
+    });
+  });
 });
 
 /**
@@ -93,7 +103,7 @@ const updateProfile = asyncHandler(async (req, res) => {
         publicId: `${req.user.id}_${Date.now()}`,
       });
       payload.avatarUrl = cloudinaryResult.secure_url;
-    } catch (error) {
+    } catch {
       throw new ApiError(500, 'Avatar upload failed');
     }
   }
