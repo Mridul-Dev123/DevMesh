@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Avatar from '../../components/Avatar';
 import PostCard from '../../components/PostCard';
+import FollowButton from '../../components/FollowButton';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfile, useProfilePosts, useUpdateProfile } from './profile.hooks';
 import { uploadProfilePicture } from '../../utils/uploadProfilePicture';
@@ -98,7 +99,10 @@ const ProfilePage = () => {
 								/>
 
 								<div className="flex-1">
-									<h1 className="text-2xl font-bold">@{profile.username}</h1>
+									<div className="flex items-center gap-3">
+										<h1 className="text-2xl font-bold">@{profile.username}</h1>
+										<FollowButton targetUserId={profileId} />
+									</div>
 									<p className="text-sm text-gray-400 mt-1">{profile.bio || 'No bio yet.'}</p>
 
 									<div className="mt-4 flex gap-5 text-sm text-gray-300">

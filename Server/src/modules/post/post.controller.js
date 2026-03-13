@@ -35,7 +35,8 @@ const getPost = asyncHandler(async (req, res) => {
  * @returns {200} Paginated posts ordered by newest first
  */
 const getFeed = asyncHandler(async (req, res) => {
-  const posts = await postService.getFeed(req.user.id);
+  const { page = 1, limit = 10 } = req.query;
+  const posts = await postService.getFeed(Number(page), Number(limit));
   return res.status(200).json(new ApiResponse(200, posts, 'Posts fetched successfully'));
 });
 /**

@@ -109,6 +109,19 @@ const getPendingRequests = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, data, 'Pending requests fetched'));
 });
 
+/**
+ * Get follow status between the authenticated user and a target user
+ * @route GET /api/follow/:userId/status
+ * @access Private
+ * @param {string} req.params.userId - ID of the target user
+ * @returns {200} { status: 'NONE' | 'PENDING' | 'ACCEPTED' }
+ */
+const getFollowStatus = asyncHandler(async (req, res) => {
+  const data = await followService.getFollowStatus(req.user.id, req.params.userId);
+
+  res.status(200).json(new ApiResponse(200, data, 'Follow status fetched'));
+});
+
 export default {
   sendFollowRequest,
   acceptFollowRequest,
@@ -117,4 +130,5 @@ export default {
   getFollowers,
   getFollowing,
   getPendingRequests,
+  getFollowStatus,
 };

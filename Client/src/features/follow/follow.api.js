@@ -1,6 +1,16 @@
 import apiClient from "../../services/apiClient";
 
 /**
+ * Get follow status between the current user and target user
+ * @param {string} userId
+ * @returns {Promise<{ status: 'NONE' | 'PENDING' | 'ACCEPTED' | 'SELF' }>}
+ */
+export const getFollowStatus = async (userId) => {
+    const res = await apiClient.get(`/follow/${userId}/status`);
+    return res.data.data;
+};
+
+/**
  * Follow a user
  * @param {string} userId
  */

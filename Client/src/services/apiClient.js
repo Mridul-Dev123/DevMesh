@@ -9,8 +9,8 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (res) => res,
   (error) => {
-    if (error.response?.status === 401) {
-      queryClient.removeQueries(["me"]);
+    if (error.response?.status === 401 && error.config?.url !== "/auth/me") {
+      queryClient.setQueryData(["me"], null);
     }
     return Promise.reject(error);
   }

@@ -12,6 +12,8 @@ router.patch('/:userId/accept', authenticate, followController.acceptFollowReque
 router.delete('/:userId/reject', authenticate, followController.rejectFollowRequest);
 /** @route DELETE /api/follow/:userId               - Unfollow a user */
 router.delete('/:userId', authenticate, followController.unfollow);
+/** @route GET    /api/follow/:userId/status        - Get follow status between auth user and target user */
+router.get('/:userId/status', authenticate, followController.getFollowStatus);
 /** @route GET    /api/follow/:userId/followers     - Get a user's followers (query: skip, take) */
 router.get('/:userId/followers', authenticate, followController.getFollowers);
 /** @route GET    /api/follow/:userId/following     - Get users a user follows (query: skip, take) */

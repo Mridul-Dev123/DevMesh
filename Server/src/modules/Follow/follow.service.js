@@ -135,6 +135,22 @@ const getPendingRequests = async (userId, { skip = 0, take = 20 }) => {
   return followRepository.getPendingRequests(userId, { skip, take });
 };
 
+/**
+ * Get the follow status between two users
+ * @param {string} currentUserId - ID of the authenticated user
+ * @param {string} targetUserId - ID of the target user
+ * @returns {Promise<{ status: 'NONE' | 'PENDING' | 'ACCEPTED' }>}
+ */
+const getFollowStatus = async (currentUserId, targetUserId) => {
+  if (currentUserId === targetUserId) {
+    return { status: 'SELF' };
+  }
+
+  const follow = await followRepository.findFollow(currentUserId, targetUserId);
+
+  return { status: follow ? follow.status : 'NONE' };
+};
+
 export default {
   sendFollowRequest,
   acceptFollowRequest,
@@ -143,4 +159,5 @@ export default {
   getFollowers,
   getFollowing,
   getPendingRequests,
+  getFollowStatus,
 };
