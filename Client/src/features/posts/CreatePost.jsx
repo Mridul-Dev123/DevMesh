@@ -1,14 +1,19 @@
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../hooks/useAuth";
 import { useCreatePost } from "./post.hooks";
 import Avatar from "../../components/Avatar";
 
 /**
- * CreatePost — post composer card
+ * CreatePost — post composer card with optional image upload
  */
 const CreatePost = () => {
     const { user } = useAuth();
     const createPost = useCreatePost();
+    const fileInputRef = useRef(null);
+
+    const [mediaFile, setMediaFile] = useState(null);
+    const [mediaPreview, setMediaPreview] = useState("");
 
     const {
         register,
@@ -17,12 +22,32 @@ const CreatePost = () => {
         formState: { errors },
     } = useForm({ defaultValues: { content: "", codeSnippet: "", language: "" } });
 
+    const handleFileSelect = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setMediaFile(file);
+        setMediaPreview(URL.createObjectURL(file));
+        e.target.value = "";
+    };
+
+    const removeMedia = () => {
+        if (mediaPreview) URL.revokeObjectURL(mediaPreview);
+        setMediaFile(null);
+        setMediaPreview("");
+    };
+
     const onSubmit = (data) => {
         const payload = {
             content: data.content,
             ...(data.codeSnippet ? { codeSnippet: data.codeSnippet, language: data.language || undefined } : {}),
+            ...(mediaFile ? { media: mediaFile } : {}),
         };
-        createPost.mutate(payload, { onSuccess: () => reset() });
+        createPost.mutate(payload, {
+            onSuccess: () => {
+                reset();
+                removeMedia();
+            },
+        });
     };
 
     if (!user) return null;
@@ -47,19 +72,57 @@ const CreatePost = () => {
                             <p className="text-xs text-red-400">{errors.content.message}</p>
                         )}
 
+                        {/* Image preview */}
+                        {mediaPreview && (
+                            <div className="relative group">
+                                <img
+                                    src={mediaPreview}
+                                    alt="Upload preview"
+                                    className="w-full max-h-64 object-cover rounded-xl border border-gray-700"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={removeMedia}
+                                    className="absolute top-2 right-2 bg-gray-900/80 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm transition-colors opacity-0 group-hover:opacity-100"
+                                    aria-label="Remove image"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        )}
+
                         {/* Code snippet toggle */}
                         <div className="space-y-2">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const el = document.getElementById("code-snippet-section");
-                                    el.classList.toggle("hidden");
-                                }}
-                                className="text-xs text-cyan-300 hover:text-cyan-200 transition-colors flex items-center gap-1"
-                            >
-                                <span>{"</>"}</span>
-                                <span>Add code snippet</span>
-                            </button>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const el = document.getElementById("code-snippet-section");
+                                        el.classList.toggle("hidden");
+                                    }}
+                                    className="text-xs text-cyan-300 hover:text-cyan-200 transition-colors flex items-center gap-1"
+                                >
+                                    <span>{"</>"}</span>
+                                    <span>Add code snippet</span>
+                                </button>
+
+                                {/* Image upload button */}
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="text-xs text-cyan-300 hover:text-cyan-200 transition-colors flex items-center gap-1"
+                                >
+                                    <span>🖼️</span>
+                                    <span>Add image</span>
+                                </button>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    onChange={handleFileSelect}
+                                    className="hidden"
+                                />
+                            </div>
 
                             <div id="code-snippet-section" className="hidden space-y-2">
                                 <input

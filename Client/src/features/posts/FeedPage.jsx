@@ -1,13 +1,25 @@
+import { useState } from "react";
 import Navbar from "../../components/Navbar";
 import CreatePost from "./CreatePost";
 import PostCard from "../../components/PostCard";
-import { useFeed } from "./post.hooks";
+import { useFeed, useFollowingFeed } from "./post.hooks";
+
+const TABS = [
+    { key: "global", label: "Global" },
+    { key: "following", label: "Following" },
+];
 
 /**
  * FeedPage — the main landing page after login
  */
 const FeedPage = () => {
-    const { data: posts, isLoading, isError } = useFeed();
+    const [activeTab, setActiveTab] = useState("global");
+
+    const globalFeed = useFeed();
+    const followingFeed = useFollowingFeed();
+
+    const { data: posts, isLoading, isError } =
+        activeTab === "global" ? globalFeed : followingFeed;
 
     return (
         <div className="min-h-screen bg-gray-950 text-gray-100">
@@ -18,6 +30,23 @@ const FeedPage = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-100">Feed</h1>
                     <p className="text-sm text-gray-500 mt-0.5">What the community is sharing</p>
+                </div>
+
+                {/* Tab switcher */}
+                <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
+                    {TABS.map((tab) => (
+                        <button
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)}
+                            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                activeTab === tab.key
+                                    ? "bg-cyan-500 text-slate-950"
+                                    : "text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
 
                 {/* Composer */}
@@ -56,8 +85,14 @@ const FeedPage = () => {
                 {!isLoading && !isError && posts?.length === 0 && (
                     <div className="text-center py-16 space-y-2">
                         <p className="text-4xl">🌱</p>
-                        <p className="text-gray-300 font-medium">Nothing here yet</p>
-                        <p className="text-gray-500 text-sm">Be the first to share something!</p>
+                        <p className="text-gray-300 font-medium">
+                            {activeTab === "following" ? "No posts from people you follow yet" : "Nothing here yet"}
+                        </p>
+                        <p className="text-gray-500 text-sm">
+                            {activeTab === "following"
+                                ? "Follow some users to see their posts here!"
+                                : "Be the first to share something!"}
+                        </p>
                     </div>
                 )}
 

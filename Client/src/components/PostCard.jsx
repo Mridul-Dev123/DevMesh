@@ -61,6 +61,16 @@ const PostCard = ({ post }) => {
                     {post.content}
                 </p>
 
+                {/* Post image */}
+                {post.mediaUrl && (
+                    <img
+                        src={post.mediaUrl}
+                        alt="Post media"
+                        className="w-full max-h-96 object-cover rounded-xl border border-gray-800 mb-3"
+                        loading="lazy"
+                    />
+                )}
+
                 {/* Code snippet */}
                 {post.codeSnippet && (
                     <pre className="bg-gray-950 border border-gray-800 rounded-xl p-4 text-xs text-cyan-100 overflow-x-auto font-mono mb-3">

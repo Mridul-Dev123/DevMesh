@@ -46,3 +46,18 @@ export const uploadImageBuffer = (buffer, options = {}) => {
     stream.end(buffer);
   });
 };
+
+/**
+ * Delete an image from Cloudinary by its public ID.
+ * @param {string} publicId
+ */
+export const deleteImageFromCloudinary = async (publicId) => {
+  ensureCloudinaryConfigured();
+  try {
+    const result = await cloudinary.uploader.destroy(publicId);
+    return result;
+  } catch (error) {
+    console.error('Cloudinary deletion error:', error);
+    throw new Error('Failed to delete image from Cloudinary', { cause: error });
+  }
+};

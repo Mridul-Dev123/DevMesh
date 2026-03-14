@@ -13,6 +13,16 @@ export const useFeed = () => {
 };
 
 /**
+ * Fetch the following-only feed
+ */
+export const useFollowingFeed = () => {
+    return useQuery({
+        queryKey: ["feed", "following"],
+        queryFn: () => postApi.getFollowingFeed(),
+    });
+};
+
+/**
  * Create a new post — invalidates the feed on success
  */
 export const useCreatePost = () => {
@@ -27,6 +37,24 @@ export const useCreatePost = () => {
         onError: (error) => {
             const message = error?.response?.data?.message ?? "Failed to create post.";
             toast.error(message);
+        },
+    });
+};
+
+/**
+ * Update a post — invalidates the feed on success
+ */
+export const useUpdatePost = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, data }) => postApi.updatePost(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["feed"] });
+            toast.success("Post updated.");
+        },
+        onError: () => {
+            toast.error("Failed to update post.");
         },
     });
 };

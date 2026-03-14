@@ -56,4 +56,58 @@ const getUserPosts = async (id, { skip = 0, take = 20 }) => {
   const posts = await postRepository.getPostsByUser(id, { skip, take });
   return posts;
 };
-export default { createPost, getPost, getFeed, getUserPosts };
+/**
+ * Get paginated feed of posts from users the current user is following
+ * @param {string} userId - Current user ID
+ * @param {number} [page=1] - Page number
+ * @param {number} [limit=10] - Posts per page
+ */
+const getFollowingFeed = async (userId, page = 1, limit = 10) => {
+  const skip = (page - 1) * limit;
+  const take = Number(limit);
+  return postRepository.getFollowingFeed(userId, { skip, take });
+};
+
+/**
+ * Update an existing post
+ * @param {string} id - Post ID
+ * @param {string} userId - Current user ID (for authorization)
+ * @param {object} data - Updated data fields
+ */
+const updatePost = async (id, userId, data) => {
+  const post = await postRepository.findPostById(id);
+  if (!post) throw new ApiError(404, 'Post not found');
+  if (post.author.id !== userId) throw new ApiError(403, 'Unauthorized to update this post');
+
+  // Strip undefined/null values so we don't accidentally blank out fields
+  const updateData = {};
+  if (data.content !== undefined) updateData.content = data.content;
+  if (data.codeSnippet !== undefined) updateData.codeSnippet = data.codeSnippet;
+  if (data.language !== undefined) updateData.language = data.language;
+
+  return postRepository.updatePost(id, updateData);
+};
+
+/**
+ * Delete a post
+ * @param {string} id - Post ID
+ * @param {string} userId - Current user ID (for authorization)
+ */
+const deletePost = async (id, userId) => {
+  const post = await postRepository.findPostById(id);
+  if (!post) throw new ApiError(404, 'Post not found');
+  if (post.author.id !== userId) throw new ApiError(403, 'Unauthorized to delete this post');
+
+  await postRepository.deletePost(id);
+  return post;
+};
+
+export default {
+  createPost,
+  getPost,
+  getFeed,
+  getUserPosts,
+  getFollowingFeed,
+  updatePost,
+  deletePost,
+};

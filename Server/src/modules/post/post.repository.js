@@ -76,4 +76,85 @@ const getPostsByUser = async (userId, { skip = 0, take = 20 }) => {
     take,
   });
 };
-export default { createPost, getAllPosts, getPostsByUser };
+
+/**
+ * Find a single post by ID
+ */
+const findPostById = (id) => {
+  return prisma.post.findUnique({
+    where: { id },
+    include: {
+      author: { select: { id: true, username: true, avatarUrl: true } },
+      _count: { select: { likes: true, comments: true } },
+    },
+  });
+};
+
+/**
+ * Update a post
+ */
+const updatePost = (id, data) => {
+  return prisma.post.update({
+    where: { id },
+    data,
+  });
+};
+
+/**
+ * Delete a post
+ */
+const deletePost = (id) => {
+  return prisma.post.delete({
+    where: { id },
+  });
+};
+
+/**
+ * Get paginated feed of users the current user is following
+ */
+const getFollowingFeed = async (userId, { skip = 0, take = 10 }) => {
+  return prisma.post.findMany({
+    where: {
+      author: {
+        // Find posts authored by users where there is an ACCEPTED follow relation
+        // where the current user is the follower and the author is the following
+        followers: {
+          some: {
+            followerId: userId,
+            status: 'ACCEPTED',
+          },
+        },
+      },
+    },
+    include: {
+      author: {
+        select: {
+          id: true,
+          username: true,
+          avatarUrl: true,
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+          comments: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    skip,
+    take,
+  });
+};
+
+export default {
+  createPost,
+  getAllPosts,
+  getPostsByUser,
+  findPostById,
+  updatePost,
+  deletePost,
+  getFollowingFeed,
+};
