@@ -18,8 +18,11 @@ const FeedPage = () => {
     const globalFeed = useFeed();
     const followingFeed = useFollowingFeed();
 
-    const { data: posts, isLoading, isError } =
+    const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
         activeTab === "global" ? globalFeed : followingFeed;
+
+    // Flatten all pages from useInfiniteQuery into a single post array
+    const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
     return (
         <div className="min-h-screen bg-gray-950 text-gray-100">
@@ -82,7 +85,7 @@ const FeedPage = () => {
                     </div>
                 )}
 
-                {!isLoading && !isError && posts?.length === 0 && (
+                {!isLoading && !isError && posts.length === 0 && (
                     <div className="text-center py-16 space-y-2">
                         <p className="text-4xl">🌱</p>
                         <p className="text-gray-300 font-medium">
@@ -96,11 +99,30 @@ const FeedPage = () => {
                     </div>
                 )}
 
-                {!isLoading && !isError && posts?.length > 0 && (
+                {!isLoading && !isError && posts.length > 0 && (
                     <div className="space-y-4">
                         {posts.map((post) => (
                             <PostCard key={post.id} post={post} />
                         ))}
+
+                        {/* Load More button */}
+                        {hasNextPage && (
+                            <div className="flex justify-center pt-2">
+                                <button
+                                    onClick={() => fetchNextPage()}
+                                    disabled={isFetchingNextPage}
+                                    className="px-6 py-2.5 rounded-xl border border-gray-700 bg-gray-900 text-sm text-gray-300 hover:bg-gray-800 hover:text-cyan-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isFetchingNextPage ? "Loading…" : "Load more"}
+                                </button>
+                            </div>
+                        )}
+
+                        {!hasNextPage && posts.length > 0 && (
+                            <p className="text-center text-xs text-gray-600 py-4">
+                                You've reached the end ✦
+                            </p>
+                        )}
                     </div>
                 )}
             </main>

@@ -1,24 +1,30 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import * as postApi from "./post.api";
 import toast from "react-hot-toast";
 
 /**
- * Fetch the global feed
+ * Fetch the global feed — infinite scroll version
  */
 export const useFeed = () => {
-    return useQuery({
+    return useInfiniteQuery({
         queryKey: ["feed"],
-        queryFn: () => postApi.getFeed(),
+        queryFn: ({ pageParam = 1 }) => postApi.getFeed({ page: pageParam }),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage) =>
+            lastPage.hasNextPage ? lastPage.page + 1 : undefined,
     });
 };
 
 /**
- * Fetch the following-only feed
+ * Fetch the following-only feed — infinite scroll version
  */
 export const useFollowingFeed = () => {
-    return useQuery({
+    return useInfiniteQuery({
         queryKey: ["feed", "following"],
-        queryFn: () => postApi.getFollowingFeed(),
+        queryFn: ({ pageParam = 1 }) => postApi.getFollowingFeed({ page: pageParam }),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage) =>
+            lastPage.hasNextPage ? lastPage.page + 1 : undefined,
     });
 };
 
