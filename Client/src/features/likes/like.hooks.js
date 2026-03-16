@@ -13,12 +13,13 @@ export const useToggleLike = (postId, isLiked) => {
     return useMutation({
         mutationFn: () => (isLiked ? likeApi.unlikePost(postId) : likeApi.likePost(postId)),
 
-        // Optimistically update the feed cache for instant UI response
+        // Optimistically update both feed caches for instant UI response
         onMutate: async () => {
             await queryClient.cancelQueries({ queryKey: ["feed"] });
             const previousFeed = queryClient.getQueryData(["feed"]);
+            const previousFollowingFeed = queryClient.getQueryData(["feed", "following"]);
 
-            queryClient.setQueryData(["feed"], (old) => {
+            const updatePosts = (old) => {
                 if (!Array.isArray(old)) return old;
                 return old.map((post) => {
                     if (post.id !== postId) return post;
@@ -29,15 +30,21 @@ export const useToggleLike = (postId, isLiked) => {
                         isLiked: !isLiked,
                     };
                 });
-            });
+            };
 
-            return { previousFeed };
+            queryClient.setQueryData(["feed"], updatePosts);
+            queryClient.setQueryData(["feed", "following"], updatePosts);
+
+            return { previousFeed, previousFollowingFeed };
         },
 
         // Roll back on error
         onError: (_err, _vars, context) => {
             if (context?.previousFeed !== undefined) {
                 queryClient.setQueryData(["feed"], context.previousFeed);
+            }
+            if (context?.previousFollowingFeed !== undefined) {
+                queryClient.setQueryData(["feed", "following"], context.previousFollowingFeed);
             }
             toast.error("Could not update like.");
         },

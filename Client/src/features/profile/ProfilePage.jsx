@@ -6,7 +6,6 @@ import PostCard from '../../components/PostCard';
 import FollowButton from '../../components/FollowButton';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfile, useProfilePosts, useUpdateProfile } from './profile.hooks';
-import { uploadProfilePicture } from '../../utils/uploadProfilePicture';
 
 const ProfilePage = () => {
 	const { id: profileId } = useParams();
@@ -45,7 +44,7 @@ const ProfilePage = () => {
 			.filter(Boolean);
 	}, [techStackInput]);
 
-	const handleFileChange = async (event) => {
+	const handleFileChange = (event) => {
 		const file = event.target.files?.[0];
 		if (!file) return;
 
@@ -53,7 +52,7 @@ const ProfilePage = () => {
 			URL.revokeObjectURL(avatarPreviewUrl);
 		}
 
-		const previewUrl = await uploadProfilePicture(file);
+		const previewUrl = URL.createObjectURL(file);
 		setAvatarPreviewUrl(previewUrl);
 		setAvatarFile(file);
 		event.target.value = '';

@@ -1,6 +1,42 @@
 import prisma from '../../config/prisma.js';
 
 /**
+ * Transform a raw Prisma post (with a `likes` array) into a clean post
+ * object with an `isLiked` boolean. The raw `likes` array is removed.
+ * @param {object} post - Raw post from Prisma
+ * @returns {object} Post with isLiked boolean
+ */
+const toPostWithIsLiked = (post) => {
+  const { likes, ...rest } = post;
+  return { ...rest, isLiked: Array.isArray(likes) && likes.length > 0 };
+};
+
+/**
+ * Shared include fragment for fetching posts.
+ * Accepts the current userId so the caller can determine isLiked.
+ * @param {string} userId
+ */
+const postInclude = (userId) => ({
+  author: {
+    select: {
+      id: true,
+      username: true,
+      avatarUrl: true,
+    },
+  },
+  _count: {
+    select: {
+      likes: true,
+      comments: true,
+    },
+  },
+  likes: {
+    where: { userId },
+    select: { userId: true },
+  },
+});
+
+/**
  * Create a new post record
  * @param {object} data - Post data
  * @param {string} data.content - Post text
@@ -12,82 +48,58 @@ const createPost = (data) => {
 };
 /**
  * Get paginated posts for the global feed, newest first
- * @param {object} pagination - Pagination options
- * @param {number} [pagination.skip=0] - Records to skip
- * @param {number} [pagination.take=10] - Records to return
- * @returns {Promise<Post[]>} Posts with author info and like/comment counts
+ * @param {object} options
+ * @param {number} [options.skip=0] - Records to skip
+ * @param {number} [options.take=10] - Records to return
+ * @param {string} options.userId - Current user ID (used to compute isLiked)
+ * @returns {Promise<Post[]>} Posts with author info, like/comment counts, and isLiked
  */
-const getAllPosts = ({ skip = 0, take = 10 }) => {
-  return prisma.post.findMany({
-    include: {
-      author: {
-        select: {
-          id: true,
-          username: true,
-          avatarUrl: true,
-        },
-      },
-      _count: {
-        select: {
-          likes: true,
-          comments: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
+const getAllPosts = async ({ skip = 0, take = 10, userId }) => {
+  const posts = await prisma.post.findMany({
+    include: postInclude(userId),
+    orderBy: { createdAt: 'desc' },
     skip,
     take,
   });
+  return posts.map(toPostWithIsLiked);
 };
 /**
  * Get paginated posts by a specific user, newest first
- * @param {string} userId - Author's user ID
+ * @param {string} authorId - Author's user ID
  * @param {object} pagination - Pagination options
  * @param {number} [pagination.skip=0] - Records to skip
  * @param {number} [pagination.take=20] - Records to return
+ * @param {string} currentUserId - Current user ID (used to compute isLiked)
  * @returns {Promise<Post[]>} The user's posts
  */
-const getPostsByUser = async (userId, { skip = 0, take = 20 }) => {
-  return prisma.post.findMany({
-    where: {
-      authorId: userId,
-    },
-    include: {
-      author: {
-        select: {
-          id: true,
-          username: true,
-          avatarUrl: true,
-        },
-      },
-      _count: {
-        select: {
-          likes: true,
-          comments: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
+const getPostsByUser = async (authorId, { skip = 0, take = 20 }, currentUserId) => {
+  const posts = await prisma.post.findMany({
+    where: { authorId },
+    include: postInclude(currentUserId),
+    orderBy: { createdAt: 'desc' },
     skip,
     take,
   });
+  return posts.map(toPostWithIsLiked);
 };
 
 /**
  * Find a single post by ID
+ * @param {string} id - Post ID
+ * @param {string} [userId] - Current user ID (used to compute isLiked). Optional.
  */
-const findPostById = (id) => {
-  return prisma.post.findUnique({
+const findPostById = async (id, userId = null) => {
+  const post = await prisma.post.findUnique({
     where: { id },
-    include: {
-      author: { select: { id: true, username: true, avatarUrl: true } },
-      _count: { select: { likes: true, comments: true } },
-    },
+    include: userId
+      ? postInclude(userId)
+      : {
+          author: { select: { id: true, username: true, avatarUrl: true } },
+          _count: { select: { likes: true, comments: true } },
+        },
   });
+  if (!post) return null;
+  return userId ? toPostWithIsLiked(post) : post;
 };
 
 /**
@@ -110,14 +122,14 @@ const deletePost = (id) => {
 };
 
 /**
- * Get paginated feed of users the current user is following
+ * Get paginated feed of posts from users the current user is following
+ * @param {string} userId - Current user ID (also used to compute isLiked)
+ * @param {object} pagination
  */
 const getFollowingFeed = async (userId, { skip = 0, take = 10 }) => {
-  return prisma.post.findMany({
+  const posts = await prisma.post.findMany({
     where: {
       author: {
-        // Find posts authored by users where there is an ACCEPTED follow relation
-        // where the current user is the follower and the author is the following
         followers: {
           some: {
             followerId: userId,
@@ -126,27 +138,12 @@ const getFollowingFeed = async (userId, { skip = 0, take = 10 }) => {
         },
       },
     },
-    include: {
-      author: {
-        select: {
-          id: true,
-          username: true,
-          avatarUrl: true,
-        },
-      },
-      _count: {
-        select: {
-          likes: true,
-          comments: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
+    include: postInclude(userId),
+    orderBy: { createdAt: 'desc' },
     skip,
     take,
   });
+  return posts.map(toPostWithIsLiked);
 };
 
 export default {

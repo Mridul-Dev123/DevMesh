@@ -35,7 +35,7 @@ export const useUpdateProfile = () => {
 	return useMutation({
 		mutationFn: profileApi.updateProfile,
 		onSuccess: (updatedUser) => {
-			queryClient.setQueryData(['me'], updatedUser);
+			queryClient.invalidateQueries({ queryKey: ['me'] });
 			queryClient.invalidateQueries({ queryKey: ['profile', updatedUser.id] });
 			queryClient.invalidateQueries({ queryKey: ['feed'] });
 			toast.success('Profile updated successfully');

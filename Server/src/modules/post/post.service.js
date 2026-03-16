@@ -13,34 +13,40 @@ import postRepository from './post.repository.js';
  * @returns {Promise<Post>} The created post
  */
 const createPost = async (data, userId) => {
-  const { content } = data;
+  const { content, codeSnippet, language, mediaUrl } = data;
   if (!content) throw new ApiError(400, 'Content is required');
-  const Post = await postRepository.createPost({ content, authorId: userId });
+  const postData = { content, authorId: userId };
+  if (codeSnippet) postData.codeSnippet = codeSnippet;
+  if (language) postData.language = language;
+  if (mediaUrl) postData.mediaUrl = mediaUrl;
+  const Post = await postRepository.createPost(postData);
   return Post;
 };
 /**
  * Get paginated global feed
  * @param {number} [page=1] - Page number
  * @param {number} [limit=10] - Posts per page
+ * @param {string} userId - Current user ID (used to compute isLiked)
  * @returns {Promise<Post[]>} Posts with author info and like/comment counts
  */
-const getFeed = async (page = 1, limit = 10) => {
+const getFeed = async (page = 1, limit = 10, userId) => {
   const skip = (page - 1) * limit;
   const take = Number(limit);
 
-  return postRepository.getAllPosts({ skip, take });
+  return postRepository.getAllPosts({ skip, take, userId });
 };
 
 /**
  * Get a single post by ID
  * @param {object} body - Must contain the post id
  * @param {string} body.id - Post ID
+ * @param {string} userId - Current user ID (used to compute isLiked)
  * @throws {ApiError} 404 - If post does not exist
  * @returns {Promise<Post>} The requested post
  */
-const getPost = async (body) => {
+const getPost = async (body, userId) => {
   const { id } = body;
-  const post = await postRepository.findPostById(id);
+  const post = await postRepository.findPostById(id, userId);
   if (!post) throw new ApiError(404, 'No Post with Given Id exists');
   return post;
 };
@@ -50,10 +56,11 @@ const getPost = async (body) => {
  * @param {object} pagination - Pagination options
  * @param {number} [pagination.skip=0] - Records to skip
  * @param {number} [pagination.take=20] - Records to return
+ * @param {string} currentUserId - Current user ID (used to compute isLiked)
  * @returns {Promise<Post[]>} The user's posts ordered by newest first
  */
-const getUserPosts = async (id, { skip = 0, take = 20 }) => {
-  const posts = await postRepository.getPostsByUser(id, { skip, take });
+const getUserPosts = async (id, { skip = 0, take = 20 }, currentUserId) => {
+  const posts = await postRepository.getPostsByUser(id, { skip, take }, currentUserId);
   return posts;
 };
 /**
