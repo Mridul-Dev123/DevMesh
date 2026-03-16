@@ -55,13 +55,16 @@ const createPost = (data) => {
  * @returns {Promise<Post[]>} Posts with author info, like/comment counts, and isLiked
  */
 const getAllPosts = async ({ skip = 0, take = 10, userId }) => {
-  const posts = await prisma.post.findMany({
-    include: postInclude(userId),
-    orderBy: { createdAt: 'desc' },
-    skip,
-    take,
-  });
-  return posts.map(toPostWithIsLiked);
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      include: postInclude(userId),
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    }),
+    prisma.post.count(),
+  ]);
+  return { posts: posts.map(toPostWithIsLiked), total };
 };
 /**
  * Get paginated posts by a specific user, newest first
@@ -73,14 +76,17 @@ const getAllPosts = async ({ skip = 0, take = 10, userId }) => {
  * @returns {Promise<Post[]>} The user's posts
  */
 const getPostsByUser = async (authorId, { skip = 0, take = 20 }, currentUserId) => {
-  const posts = await prisma.post.findMany({
-    where: { authorId },
-    include: postInclude(currentUserId),
-    orderBy: { createdAt: 'desc' },
-    skip,
-    take,
-  });
-  return posts.map(toPostWithIsLiked);
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      where: { authorId },
+      include: postInclude(currentUserId),
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    }),
+    prisma.post.count({ where: { authorId } }),
+  ]);
+  return { posts: posts.map(toPostWithIsLiked), total };
 };
 
 /**
@@ -127,23 +133,25 @@ const deletePost = (id) => {
  * @param {object} pagination
  */
 const getFollowingFeed = async (userId, { skip = 0, take = 10 }) => {
-  const posts = await prisma.post.findMany({
-    where: {
-      author: {
-        followers: {
-          some: {
-            followerId: userId,
-            status: 'ACCEPTED',
-          },
-        },
+  const followingWhere = {
+    author: {
+      followers: {
+        some: { followerId: userId, status: 'ACCEPTED' },
       },
     },
-    include: postInclude(userId),
-    orderBy: { createdAt: 'desc' },
-    skip,
-    take,
-  });
-  return posts.map(toPostWithIsLiked);
+  };
+
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      where: followingWhere,
+      include: postInclude(userId),
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    }),
+    prisma.post.count({ where: followingWhere }),
+  ]);
+  return { posts: posts.map(toPostWithIsLiked), total };
 };
 
 export default {
