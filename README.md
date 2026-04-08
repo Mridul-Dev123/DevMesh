@@ -1,24 +1,23 @@
 # DevMesh
 
-DevMesh is a full-stack social platform for developers to share posts, follow each other, save content, and chat in real time.
+A full-stack developer social network inspired by X, built to explore real-time systems and social graph architecture. DevMesh empowers developers to share posts, follow each other, save content, and connect through real-time chat.
 
 ## Features
 
-- Session-based authentication (register, login, logout, current user).
-- Developer profiles with bio, tech stack, and avatar upload.
-- Create, update, delete, and browse posts (global + following feed).
-- Image upload support for posts and avatars (Cloudinary).
-- Likes and comments on posts.
-- Bookmarks (save/unsave posts and list saved posts).
-- Follow graph with request flow (`PENDING` -> `ACCEPTED`), followers/following lists, and status endpoint.
-- Realtime notifications for post likes/comments (when the post owner is online).
-- Realtime direct messaging with:
-  - mutual-follow access control (both users must follow each other),
-  - typing indicator,
-  - read receipts (single tick / double tick),
-  - unread message count badge in navbar.
-- Request validation and centralized error handling.
-- Basic unit/integration test coverage for core error and validation behavior.
+### Real-Time & Social Graph
+- **Realtime Direct Messaging:** Secure chat with mutual-follow access control (both users must follow each other), typing indicators, read receipts (single/double tick), and unread message count badges.
+- **Follow Graph:** Comprehensive follow system featuring a request flow (`PENDING` -> `ACCEPTED`), followers/following lists, and status tracking.
+- **Realtime Notifications:** Instant WebSocket-powered notifications for post likes and comments when the post owner is online.
+
+### Content
+- **Rich Feeds:** Create, update, delete, and browse posts across a global timeline or a curated following feed.
+- **Interactions:** Like, comment on, and bookmark posts for later viewing.
+- **Media Uploads:** Integrated image upload support for posts and avatars using Cloudinary.
+
+### Auth & Profiles
+- **Session Auth:** Secure, session-based authentication (register, login, logout, current user).
+- **Developer Profiles:** Customizable user profiles featuring bios, tech stacks, and avatar uploads.
+- **Robust Infrastructure:** Centralized request validation and comprehensive error handling.
 
 ## Tech Stack
 
@@ -47,7 +46,12 @@ DevMesh is a full-stack social platform for developers to share posts, follow ea
 | Uploads | Multer + Cloudinary |
 | Realtime | Socket.IO |
 
-## Project Structure
+## Architecture & Project Structure
+
+The repository is organized to enforce a strict separation of concerns, making it easy to add new domains or features without touching unrelated code. 
+
+- **Client:** Employs a **feature-based architecture** (`src/features`). Grouping related UI components, custom hooks, and API calls by feature (e.g., auth, chat, posts) keeps the codebase cohesive and intuitive as the frontend grows.
+- **Server:** Follows a **modular, domain-driven structure** (`src/modules`). Each domain (e.g., user, chat, post) encapsulates its own controllers, services, repositories, and routes, ensuring clear boundaries and isolated business logic.
 
 ```text
 DevMesh/
@@ -81,8 +85,8 @@ DevMesh/
 ### 1. Clone
 
 ```bash
-git clone https://github.com/your-username/devmesh.git
-cd devmesh
+git clone https://github.com/Mridul-Dev123/DevMesh.git
+cd DevMesh
 ```
 
 ### 2. Setup Server
@@ -235,12 +239,11 @@ cd Server
 npm run test
 ```
 
-Current tests cover key unit/integration behavior for:
+Testing deliberately covers critical system paths to ensure core functionality and resilience. The test suite validates:
 
-- `ApiError` structure,
-- error normalization and middleware responses,
-- request validation middleware,
-- realtime notification utility behavior.
+- Consistent `ApiError` structure, error normalization, and middleware responses.
+- Robust request validation middleware behavior.
+- Realtime notification utility behavior and reliability.
 
 ## License
 
