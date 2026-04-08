@@ -15,7 +15,7 @@ export const useProfile = (userId) => {
 };
 
 /**
- * Fetch posts by user id
+ * Fetch posts by user id — returns only the posts array from the paginated response
  * @param {string} userId
  */
 export const useProfilePosts = (userId) => {
@@ -23,6 +23,7 @@ export const useProfilePosts = (userId) => {
 		queryKey: ['profilePosts', userId],
 		queryFn: () => profileApi.getUserPosts(userId),
 		enabled: !!userId,
+		select: (data) => data.posts,
 	});
 };
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import Navbar from "../../components/Navbar";
 import PostCard from "../../components/PostCard";
@@ -23,12 +23,27 @@ const FeedPage = () => {
     const followingFeed = useFollowingFeed();
     const savedFeed = useSavedPosts();
 
-    const { data: posts, isLoading, isError } =
+    const activeQuery =
         activeTab === "global"
             ? globalFeed
             : activeTab === "following"
               ? followingFeed
               : savedFeed;
+
+    const isSavedTab = activeTab === "saved";
+    const isLoading = activeQuery.isLoading;
+    const isError = activeQuery.isError;
+
+    const posts = useMemo(() => {
+        if (isSavedTab) {
+            return Array.isArray(savedFeed.data) ? savedFeed.data : [];
+        }
+        return activeQuery.data?.pages?.flatMap((page) => page.posts) ?? [];
+    }, [isSavedTab, savedFeed.data, activeQuery.data]);
+
+    const hasNextPage = !isSavedTab && Boolean(activeQuery.hasNextPage);
+    const isFetchingNextPage = !isSavedTab && Boolean(activeQuery.isFetchingNextPage);
+    const fetchNextPage = !isSavedTab ? activeQuery.fetchNextPage : null;
 
     return (
         <div className="min-h-screen bg-gray-950 text-gray-100">
@@ -87,7 +102,7 @@ const FeedPage = () => {
                     </div>
                 )}
 
-                {!isLoading && !isError && posts?.length === 0 && (
+                {!isLoading && !isError && posts.length === 0 && (
                     <div className="text-center py-16 space-y-2">
                         <p className="text-4xl">Saved</p>
                         <p className="text-gray-300 font-medium">
@@ -107,11 +122,29 @@ const FeedPage = () => {
                     </div>
                 )}
 
-                {!isLoading && !isError && posts?.length > 0 && (
+                {!isLoading && !isError && posts.length > 0 && (
                     <div className="space-y-4">
                         {posts.map((post) => (
                             <PostCard key={post.id} post={post} />
                         ))}
+
+                        {hasNextPage && (
+                            <div className="flex justify-center pt-2">
+                                <button
+                                    onClick={() => fetchNextPage?.()}
+                                    disabled={isFetchingNextPage}
+                                    className="px-6 py-2.5 rounded-xl border border-gray-700 bg-gray-900 text-sm text-gray-300 hover:bg-gray-800 hover:text-cyan-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isFetchingNextPage ? "Loading..." : "Load more"}
+                                </button>
+                            </div>
+                        )}
+
+                        {!hasNextPage && !isSavedTab && posts.length > 0 && (
+                            <p className="text-center text-xs text-gray-600 py-4">
+                                You&apos;ve reached the end.
+                            </p>
+                        )}
                     </div>
                 )}
             </main>

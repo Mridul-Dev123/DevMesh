@@ -17,7 +17,7 @@ const toPostWithUserState = (post) => {
 
 /**
  * Shared include fragment for fetching posts.
- * Accepts the current userId so the caller can determine isLiked.
+ * Accepts the current userId so the caller can determine user state.
  * @param {string} userId
  */
 const postInclude = (userId) => ({
@@ -54,47 +54,55 @@ const postInclude = (userId) => ({
 const createPost = (data) => {
   return prisma.post.create({ data });
 };
+
 /**
  * Get paginated posts for the global feed, newest first
  * @param {object} options
  * @param {number} [options.skip=0] - Records to skip
  * @param {number} [options.take=10] - Records to return
- * @param {string} options.userId - Current user ID (used to compute isLiked)
- * @returns {Promise<Post[]>} Posts with author info, like/comment counts, and isLiked
+ * @param {string} options.userId - Current user ID
+ * @returns {Promise<{ posts: object[], total: number }>}
  */
 const getAllPosts = async ({ skip = 0, take = 10, userId }) => {
-  const posts = await prisma.post.findMany({
-    include: postInclude(userId),
-    orderBy: { createdAt: 'desc' },
-    skip,
-    take,
-  });
-  return posts.map(toPostWithUserState);
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      include: postInclude(userId),
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    }),
+    prisma.post.count(),
+  ]);
+  return { posts: posts.map(toPostWithUserState), total };
 };
+
 /**
  * Get paginated posts by a specific user, newest first
  * @param {string} authorId - Author's user ID
  * @param {object} pagination - Pagination options
  * @param {number} [pagination.skip=0] - Records to skip
  * @param {number} [pagination.take=20] - Records to return
- * @param {string} currentUserId - Current user ID (used to compute isLiked)
- * @returns {Promise<Post[]>} The user's posts
+ * @param {string} currentUserId - Current user ID
+ * @returns {Promise<{ posts: object[], total: number }>}
  */
 const getPostsByUser = async (authorId, { skip = 0, take = 20 }, currentUserId) => {
-  const posts = await prisma.post.findMany({
-    where: { authorId },
-    include: postInclude(currentUserId),
-    orderBy: { createdAt: 'desc' },
-    skip,
-    take,
-  });
-  return posts.map(toPostWithUserState);
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      where: { authorId },
+      include: postInclude(currentUserId),
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    }),
+    prisma.post.count({ where: { authorId } }),
+  ]);
+  return { posts: posts.map(toPostWithUserState), total };
 };
 
 /**
  * Find a single post by ID
  * @param {string} id - Post ID
- * @param {string} [userId] - Current user ID (used to compute isLiked). Optional.
+ * @param {string} [userId] - Current user ID. Optional.
  */
 const findPostById = async (id, userId = null) => {
   const post = await prisma.post.findUnique({
@@ -130,28 +138,33 @@ const deletePost = (id) => {
 };
 
 /**
- * Get paginated feed of posts from users the current user is following
- * @param {string} userId - Current user ID (also used to compute isLiked)
+ * Get paginated feed of posts from users the current user follows
+ * @param {string} userId - Current user ID
  * @param {object} pagination
+ * @param {number} [pagination.skip=0]
+ * @param {number} [pagination.take=10]
+ * @returns {Promise<{ posts: object[], total: number }>}
  */
 const getFollowingFeed = async (userId, { skip = 0, take = 10 }) => {
-  const posts = await prisma.post.findMany({
-    where: {
-      author: {
-        followers: {
-          some: {
-            followerId: userId,
-            status: 'ACCEPTED',
-          },
-        },
+  const followingWhere = {
+    author: {
+      followers: {
+        some: { followerId: userId, status: 'ACCEPTED' },
       },
     },
-    include: postInclude(userId),
-    orderBy: { createdAt: 'desc' },
-    skip,
-    take,
-  });
-  return posts.map(toPostWithUserState);
+  };
+
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      where: followingWhere,
+      include: postInclude(userId),
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take,
+    }),
+    prisma.post.count({ where: followingWhere }),
+  ]);
+  return { posts: posts.map(toPostWithUserState), total };
 };
 
 /**
@@ -160,7 +173,7 @@ const getFollowingFeed = async (userId, { skip = 0, take = 10 }) => {
  * @param {object} pagination
  * @param {number} [pagination.skip=0] - Records to skip
  * @param {number} [pagination.take=20] - Records to return
- * @returns {Promise<Post[]>} Bookmarked posts with user-specific flags
+ * @returns {Promise<object[]>} Bookmarked posts with user-specific flags
  */
 const getBookmarkedPosts = async (userId, { skip = 0, take = 20 } = {}) => {
   const bookmarks = await prisma.bookmark.findMany({

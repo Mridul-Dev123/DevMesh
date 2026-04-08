@@ -37,13 +37,14 @@ const createPost = async (data, userId) => {
  * @param {number} [page=1] - Page number
  * @param {number} [limit=10] - Posts per page
  * @param {string} userId - Current user ID (used to compute isLiked)
- * @returns {Promise<Post[]>} Posts with author info and like/comment counts
+ * @returns {Promise<{ posts, total, page, limit, totalPages, hasNextPage }>}
  */
 const getFeed = async (page = 1, limit = 10, userId) => {
   const skip = (page - 1) * limit;
   const take = Number(limit);
-
-  return postRepository.getAllPosts({ skip, take, userId });
+  const { posts, total } = await postRepository.getAllPosts({ skip, take, userId });
+  const totalPages = Math.ceil(total / take);
+  return { posts, total, page: Number(page), limit: take, totalPages, hasNextPage: page < totalPages };
 };
 
 /**
@@ -63,26 +64,31 @@ const getPost = async (body, userId) => {
 /**
  * Get paginated posts authored by a specific user
  * @param {string} id - User ID
- * @param {object} pagination - Pagination options
+ * @param {object} pagination
  * @param {number} [pagination.skip=0] - Records to skip
  * @param {number} [pagination.take=20] - Records to return
  * @param {string} currentUserId - Current user ID (used to compute isLiked)
- * @returns {Promise<Post[]>} The user's posts ordered by newest first
+ * @returns {Promise<{ posts, total, skip, take, hasNextPage }>}
  */
 const getUserPosts = async (id, { skip = 0, take = 20 }, currentUserId) => {
-  const posts = await postRepository.getPostsByUser(id, { skip, take }, currentUserId);
-  return posts;
+  skip = Number(skip);
+  take = Number(take);
+  const { posts, total } = await postRepository.getPostsByUser(id, { skip, take }, currentUserId);
+  return { posts, total, skip, take, hasNextPage: skip + take < total };
 };
 /**
  * Get paginated feed of posts from users the current user is following
  * @param {string} userId - Current user ID
  * @param {number} [page=1] - Page number
  * @param {number} [limit=10] - Posts per page
+ * @returns {Promise<{ posts, total, page, limit, totalPages, hasNextPage }>}
  */
 const getFollowingFeed = async (userId, page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
   const take = Number(limit);
-  return postRepository.getFollowingFeed(userId, { skip, take });
+  const { posts, total } = await postRepository.getFollowingFeed(userId, { skip, take });
+  const totalPages = Math.ceil(total / take);
+  return { posts, total, page: Number(page), limit: take, totalPages, hasNextPage: page < totalPages };
 };
 
 /**
