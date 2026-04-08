@@ -12,17 +12,42 @@ import bcrypt from 'bcrypt';
  * @returns {Promise<Omit<User, 'password'>>} Created user without the password field
  */
 const register = async (data) => {
-  const { username, email, password } = data;
-  console.log(`|| Data Extracted Username:${username}, Email:${email}, Pass:${password}`);
+  const username = String(data?.username || '').trim();
+  const email = String(data?.email || '')
+    .trim()
+    .toLowerCase();
+  const password = typeof data?.password === 'string' ? data.password : '';
+
   if (!username || !email || !password) {
-    throw new ApiError(400, 'Username, password, email are required');
+    throw new ApiError(400, 'Username, password, email are required', {
+      code: 'VALIDATION_ERROR',
+      errors: [{ field: 'body', message: 'username, email, and password are required' }],
+    });
   }
+
+  if (password.length < 8) {
+    throw new ApiError(400, 'Password must be at least 8 characters long', {
+      code: 'VALIDATION_ERROR',
+      errors: [{ field: 'password', message: 'Minimum length is 8' }],
+    });
+  }
+
   let existingUser = await userRepository.findByUsername(username);
-  if (existingUser) throw new ApiError(400, 'Username taken');
-  console.log('|| Validated Existing Username');
+  if (existingUser) {
+    throw new ApiError(409, 'Username already exists', {
+      code: 'USERNAME_TAKEN',
+      errors: [{ field: 'username', message: 'username already exists' }],
+    });
+  }
+
   existingUser = await userRepository.findByEmail(email);
-  if (existingUser) throw new ApiError(400, 'Email already exist');
-  console.log('|| Validated Existing Useremail');
+  if (existingUser) {
+    throw new ApiError(409, 'Email already exists', {
+      code: 'EMAIL_TAKEN',
+      errors: [{ field: 'email', message: 'email already exists' }],
+    });
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await userRepository.createUser({
@@ -33,7 +58,6 @@ const register = async (data) => {
 
   const safeUser = { ...user };
   delete safeUser.password;
-  console.log(safeUser);
   return safeUser;
 };
 
@@ -78,7 +102,10 @@ const updateProfile = async (userId, data) => {
   }
 
   if (Object.keys(updateData).length === 0) {
-    throw new ApiError(400, 'No valid profile fields provided');
+    throw new ApiError(400, 'No valid profile fields provided', {
+      code: 'VALIDATION_ERROR',
+      errors: [{ field: 'body', message: 'Expected bio, techStack, or avatarUrl' }],
+    });
   }
 
   return userRepository.updateProfile(userId, updateData);

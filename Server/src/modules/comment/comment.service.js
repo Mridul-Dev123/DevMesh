@@ -1,5 +1,7 @@
 import ApiError from '../../core/ApiError.js';
 import commentRepository from './comment.repository.js';
+import postRepository from '../post/post.repository.js';
+import { buildPostInteractionNotification, emitNotificationToUser } from '../../utils/notifications.js';
 
 /**
  * Create a comment on a post
@@ -9,18 +11,37 @@ import commentRepository from './comment.repository.js';
  * @throws {ApiError} 400 - If content is missing
  * @returns {Promise<{ comment: Comment, commentCount: number }>}
  */
-const createComment = async (userId, postId, content) => {
-  if (!content) {
-    throw new ApiError(400, 'Comment content is required');
+const createComment = async (userId, postId, content, io = null) => {
+  const normalizedContent = typeof content === 'string' ? content.trim() : '';
+
+  if (!normalizedContent) {
+    throw new ApiError(400, 'Comment content is required', {
+      code: 'VALIDATION_ERROR',
+      errors: [{ field: 'content', message: 'content is required' }],
+    });
+  }
+
+  const post = await postRepository.findPostById(postId);
+  if (!post) {
+    throw new ApiError(404, 'Post not found');
   }
 
   const comment = await commentRepository.createComment({
-    content,
+    content: normalizedContent,
     authorId: userId,
     postId,
   });
 
   const commentCount = await commentRepository.countComments(postId);
+
+  if (post.author?.id && post.author.id !== userId) {
+    const payload = buildPostInteractionNotification({
+      type: 'post_commented',
+      actor: comment.author,
+      post,
+    });
+    emitNotificationToUser(io, post.author.id, payload);
+  }
 
   return { comment, commentCount };
 };

@@ -1,13 +1,21 @@
 import multer from 'multer';
+import ApiError from '../core/ApiError.js';
 
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
+  void req;
   const allowed = ['image/jpeg', 'image/png', 'image/webp'];
   if (allowed.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPEG, PNG, WEBP allowed'), false);
+    cb(
+      new ApiError(400, 'Only JPEG, PNG, WEBP files are allowed', {
+        code: 'INVALID_FILE_TYPE',
+        errors: [{ field: 'file', message: `Unsupported mime type: ${file.mimetype}` }],
+      }),
+      false
+    );
   }
 };
 

@@ -13,8 +13,18 @@ import postRepository from './post.repository.js';
  * @returns {Promise<Post>} The created post
  */
 const createPost = async (data, userId) => {
-  const { content, codeSnippet, language, mediaUrl } = data;
-  if (!content) throw new ApiError(400, 'Content is required');
+  const content = typeof data?.content === 'string' ? data.content.trim() : '';
+  const codeSnippet = data?.codeSnippet;
+  const language = data?.language;
+  const mediaUrl = data?.mediaUrl;
+
+  if (!content) {
+    throw new ApiError(400, 'Content is required', {
+      code: 'VALIDATION_ERROR',
+      errors: [{ field: 'content', message: 'content is required' }],
+    });
+  }
+
   const postData = { content, authorId: userId };
   if (codeSnippet) postData.codeSnippet = codeSnippet;
   if (language) postData.language = language;
@@ -76,6 +86,18 @@ const getFollowingFeed = async (userId, page = 1, limit = 10) => {
 };
 
 /**
+ * Get posts bookmarked by the current user
+ * @param {string} userId - Current user ID
+ * @param {object} pagination - Pagination options
+ * @param {number} [pagination.skip=0] - Records to skip
+ * @param {number} [pagination.take=20] - Records to return
+ * @returns {Promise<Post[]>} Bookmarked posts ordered by most recently saved
+ */
+const getBookmarkedPosts = async (userId, { skip = 0, take = 20 } = {}) => {
+  return postRepository.getBookmarkedPosts(userId, { skip, take });
+};
+
+/**
  * Update an existing post
  * @param {string} id - Post ID
  * @param {string} userId - Current user ID (for authorization)
@@ -88,7 +110,16 @@ const updatePost = async (id, userId, data) => {
 
   // Strip undefined/null values so we don't accidentally blank out fields
   const updateData = {};
-  if (data.content !== undefined) updateData.content = data.content;
+  if (data.content !== undefined) {
+    const trimmed = typeof data.content === 'string' ? data.content.trim() : data.content;
+    if (trimmed === '') {
+      throw new ApiError(400, 'Content cannot be empty', {
+        code: 'VALIDATION_ERROR',
+        errors: [{ field: 'content', message: 'content cannot be empty' }],
+      });
+    }
+    updateData.content = trimmed;
+  }
   if (data.codeSnippet !== undefined) updateData.codeSnippet = data.codeSnippet;
   if (data.language !== undefined) updateData.language = data.language;
 
@@ -115,6 +146,7 @@ export default {
   getFeed,
   getUserPosts,
   getFollowingFeed,
+  getBookmarkedPosts,
   updatePost,
   deletePost,
 };

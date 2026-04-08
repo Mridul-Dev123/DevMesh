@@ -36,12 +36,17 @@ const getOrCreateConversation = asyncHandler(async (req, res) => {
  * @returns {200} List of messages (newest first) with sender details
  */
 const getMessages = asyncHandler(async (req, res) => {
-  const messages = await chatService.getMessages(req.params.conversationId, req.user.id, req.query);
+  const messages = await chatService.getMessages(
+    req.params.conversationId,
+    req.user.id,
+    req.query,
+    req.app.get('io')
+  );
   return res.status(200).json(new ApiResponse(200, messages, 'Messages fetched successfully'));
 });
 
 /**
- * Send a message in a conversation (REST fallback — Socket.io is preferred for real-time)
+ * Send a message in a conversation (REST fallback - Socket.io is preferred for real-time)
  * @route POST /api/chat/conversations/:conversationId/messages
  * @access Private
  * @param {string} req.params.conversationId - ID of the conversation

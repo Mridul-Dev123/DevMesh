@@ -10,7 +10,12 @@ import commentService from './comment.service.js';
  * @returns {201} Created comment object and updated total comment count
  */
 const createComment = asyncHandler(async (req, res) => {
-  const data = await commentService.createComment(req.user.id, req.params.postId, req.body.content);
+  const data = await commentService.createComment(
+    req.user.id,
+    req.params.postId,
+    req.body.content,
+    req.app.get('io')
+  );
 
   res.status(201).json(new ApiResponse(201, data, 'Comment added'));
 });

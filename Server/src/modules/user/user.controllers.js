@@ -34,7 +34,12 @@ const login = asyncHandler(async (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err) return next(err);
     if (!user) {
-      return next(new ApiError(404, info?.message || 'User Not Exists'));
+      return next(
+        new ApiError(401, info?.message || 'Invalid credentials', {
+          code: 'INVALID_CREDENTIALS',
+          errors: [{ field: 'identifier', message: info?.message || 'Invalid credentials' }],
+        })
+      );
     }
     req.logIn(user, (err) => {
       if (err) {

@@ -1,5 +1,7 @@
 import ApiError from '../../core/ApiError.js';
 import likeRepository from './like.repository.js';
+import postRepository from '../post/post.repository.js';
+import { buildPostInteractionNotification, emitNotificationToUser } from '../../utils/notifications.js';
 
 /**
  * Like a post on behalf of the user
@@ -8,15 +10,29 @@ import likeRepository from './like.repository.js';
  * @throws {ApiError} 400 - If the post is already liked by this user
  * @returns {Promise<{ liked: true, likeCount: number }>}
  */
-const likePost = async (userId, postId) => {
+const likePost = async (userId, postId, io = null) => {
+  const post = await postRepository.findPostById(postId);
+  if (!post) {
+    throw new ApiError(404, 'Post not found');
+  }
+
   const existing = await likeRepository.findLike(userId, postId);
 
   if (existing) {
     throw new ApiError(400, 'Post already liked');
   }
 
-  await likeRepository.createLike(userId, postId);
+  const like = await likeRepository.createLike(userId, postId);
   const likeCount = await likeRepository.countLikes(postId);
+
+  if (post.author?.id && post.author.id !== userId) {
+    const payload = buildPostInteractionNotification({
+      type: 'post_liked',
+      actor: like.user,
+      post,
+    });
+    emitNotificationToUser(io, post.author.id, payload);
+  }
 
   return { liked: true, likeCount };
 };

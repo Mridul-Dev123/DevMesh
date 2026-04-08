@@ -1,203 +1,247 @@
-# 🌐 DevMesh
+# DevMesh
 
-> A social platform built for developers — share ideas, follow peers, and collaborate through code.
+DevMesh is a full-stack social platform for developers to share posts, follow each other, save content, and chat in real time.
 
-![Tech Stack](https://img.shields.io/badge/Stack-React%20%7C%20Node.js%20%7C%20Prisma%20%7C%20PostgreSQL-blue)
-![License](https://img.shields.io/badge/License-ISC-green)
+## Features
 
----
+- Session-based authentication (register, login, logout, current user).
+- Developer profiles with bio, tech stack, and avatar upload.
+- Create, update, delete, and browse posts (global + following feed).
+- Image upload support for posts and avatars (Cloudinary).
+- Likes and comments on posts.
+- Bookmarks (save/unsave posts and list saved posts).
+- Follow graph with request flow (`PENDING` -> `ACCEPTED`), followers/following lists, and status endpoint.
+- Realtime notifications for post likes/comments (when the post owner is online).
+- Realtime direct messaging with:
+  - mutual-follow access control (both users must follow each other),
+  - typing indicator,
+  - read receipts (single tick / double tick),
+  - unread message count badge in navbar.
+- Request validation and centralized error handling.
+- Basic unit/integration test coverage for core error and validation behavior.
 
-## ✨ Features
-
-- 🔐 **Authentication** — Session-based login/register with Passport.js. GitHub OAuth ready.
-- 📝 **Posts** — Create, edit, and delete posts with text, code snippets, and images.
-- 🖼️ **Media Uploads** — Cloudinary-backed image uploads for posts (5MB) and avatars (2MB).
-- ❤️ **Likes** — Toggle likes on any post.
-- 💬 **Comments** — Add and delete comments per post.
-- 👥 **Follow System** — Send, accept, and reject follow requests. PENDING / ACCEPTED states.
-- 📰 **Feed** — Global feed (all posts) and a Following feed (posts from people you follow).
-- 💬 **Real-time Chat** — Socket.io powered private messaging (in progress).
-- 👤 **Profiles** — View and edit profiles with bio, tech stack, and avatar.
-
----
-
-## 🏗️ Tech Stack
+## Tech Stack
 
 ### Client
-| | |
+
+| Area | Stack |
 |---|---|
 | Framework | React 19 + Vite |
-| Routing | React Router v7 |
-| Data Fetching | TanStack Query v5 |
-| Forms | React Hook Form |
-| Styling | Tailwind CSS v4 |
+| Routing | React Router |
+| State/Data | TanStack Query |
 | HTTP | Axios |
+| Styling | Tailwind CSS |
+| Realtime | Socket.IO Client |
 | Notifications | React Hot Toast |
 
 ### Server
-| | |
+
+| Area | Stack |
 |---|---|
 | Runtime | Node.js (ESM) |
-| Framework | Express v5 |
-| ORM | Prisma v6 |
+| Framework | Express 5 |
+| ORM | Prisma |
 | Database | PostgreSQL |
-| Auth | Passport.js (Local + GitHub OAuth) |
-| Sessions | express-session + connect-pg-simple |
-| Media | Cloudinary + Multer |
-| Real-time | Socket.io |
+| Auth | Passport Local + Express Session |
+| Session Store | connect-pg-simple |
+| Uploads | Multer + Cloudinary |
+| Realtime | Socket.IO |
 
----
+## Project Structure
 
-## 📁 Project Structure
-
-```
+```text
 DevMesh/
-├── Client/                  # React frontend
-│   └── src/
-│       ├── app/             # Router and QueryClient setup
-│       ├── components/      # Shared UI (Navbar, PostCard, Avatar, etc.)
-│       ├── features/        # Feature modules (auth, posts, profile, follow, etc.)
-│       ├── hooks/           # Global hooks (useAuth)
-│       └── services/        # Axios API client
-│
-└── Server/                  # Express backend
-    ├── prisma/              # Prisma schema and seed
-    └── src/
-        ├── config/          # Passport & Prisma setup
-        ├── core/            # ApiResponse, ApiError, asyncHandler
-        ├── middleware/       # Auth guard, Multer upload
-        ├── modules/         # Feature modules (post, user, like, comment, follow, chat)
-        └── utils/           # Cloudinary helpers
+|-- Client/
+|   `-- src/
+|       |-- app/
+|       |-- components/
+|       |-- features/
+|       |-- hooks/
+|       |-- services/
+|       `-- utils/
+`-- Server/
+    |-- prisma/
+    |-- src/
+    |   |-- config/
+    |   |-- core/
+    |   |-- middleware/
+    |   |-- modules/
+    |   `-- utils/
+    `-- test/
 ```
 
----
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-- Node.js >= 18
-- PostgreSQL database
+
+- Node.js 18+
+- PostgreSQL
 - Cloudinary account
 
-### 1. Clone the repo
+### 1. Clone
+
 ```bash
 git clone https://github.com/your-username/devmesh.git
 cd devmesh
 ```
 
-### 2. Setup the Server
+### 2. Setup Server
+
 ```bash
 cd Server
 npm install
 ```
 
-Create a `.env` file in the `Server` directory:
+Create `Server/.env`:
+
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/devmesh
-SESSION_SECRET=your_super_secret_key
+SESSION_SECRET=replace_with_a_secure_secret
+CLIENT_URL=http://localhost:5173
+NODE_ENV=development
+PORT=3000
 
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
-
-CLIENT_URL=http://localhost:5173
-NODE_ENV=development
 ```
 
-Run Prisma migrations and seed:
+Run migrations (and optional seed):
+
 ```bash
 npx prisma migrate dev
 npm run seed
 ```
 
-Start the dev server:
+Start backend:
+
 ```bash
 npm run dev
 ```
-> Runs on `http://localhost:3000`
 
----
+### 3. Setup Client
 
-### 3. Setup the Client
 ```bash
 cd ../Client
 npm install
 ```
 
-Create a `.env` file in the `Client` directory:
+Create `Client/.env`:
+
 ```env
 VITE_BASE_URL=http://localhost:3000/api
 ```
 
-Start the dev server:
+Start frontend:
+
 ```bash
 npm run dev
 ```
-> Runs on `http://localhost:5173`
 
----
+## Scripts
 
-## 🛣️ API Reference
+### Server (`/Server`)
 
-### Auth — `/api/auth`
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/register` | Register a new user |
-| POST | `/login` | Login with username/email + password |
-| POST | `/logout` | Logout |
-| GET | `/me` | Get current user |
-| GET | `/profile/:userId` | Get user profile |
-| PATCH | `/profile` | Update profile (bio, avatar, tech stack) |
-
-### Posts — `/api/post`
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/` | Global feed (paginated) |
-| GET | `/feed/following` | Following-only feed |
-| GET | `/:id` | Get single post |
-| GET | `/user/:userId` | Get user's posts |
-| POST | `/` | Create post (with optional image) |
-| PATCH | `/:id` | Update post (author only) |
-| DELETE | `/:id` | Delete post + Cloudinary cleanup |
-
-### Social — `/api/like`, `/api/comment`, `/api/follow`
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/like/:id` | Like a post |
-| DELETE | `/like/:id` | Unlike a post |
-| POST | `/comment/:postId` | Add a comment |
-| GET | `/comment/:postId` | Get comments |
-| DELETE | `/comment/:commentId` | Delete a comment |
-| POST | `/follow/:userId` | Send follow request |
-| PATCH | `/follow/:userId/accept` | Accept follow request |
-| DELETE | `/follow/:userId/reject` | Reject follow request |
-| DELETE | `/follow/:userId` | Unfollow a user |
-| GET | `/follow/:userId/followers` | List followers |
-| GET | `/follow/:userId/following` | List following |
-| GET | `/follow/pending` | Pending follow requests |
-| GET | `/follow/:userId/status` | Follow status |
-
----
-
-## 🧹 Scripts
-
-### Server
 ```bash
-npm run dev      # Start with nodemon
-npm run lint     # Run ESLint
-npm run format   # Run Prettier
-npm run seed     # Seed the database
+npm run dev
+npm run lint
+npm run lint:ci
+npm run lint:fix
+npm run test
+npm run test:watch
+npm run seed
+npm run format
 ```
 
-### Client
+### Client (`/Client`)
+
 ```bash
-npm run dev      # Start Vite dev server
-npm run build    # Build for production
-npm run lint     # Run ESLint
+npm run dev
+npm run build
+npm run preview
+npm run lint
+npm run lint:ci
+npm run lint:fix
 ```
 
----
+## API Overview
 
-## 📄 License
+### Auth (`/api/auth`)
 
-ISC © DevMesh
+- `POST /register`
+- `POST /login`
+- `POST /logout`
+- `GET /me`
+- `GET /profile/:userId`
+- `PATCH /profile`
+
+### Posts (`/api/post`)
+
+- `GET /` (global feed)
+- `GET /feed/following`
+- `GET /:id`
+- `GET /user/:userId`
+- `POST /`
+- `PATCH /:id`
+- `DELETE /:id`
+
+### Likes (`/api/like`)
+
+- `POST /:id`
+- `DELETE /:id`
+
+### Comments (`/api/comment`)
+
+- `POST /:postId`
+- `GET /:postId`
+- `DELETE /:commentId`
+
+### Follow (`/api/follow`)
+
+- `GET /pending`
+- `POST /:userId`
+- `PATCH /:userId/accept`
+- `DELETE /:userId/reject`
+- `DELETE /:userId`
+- `GET /:userId/status`
+- `GET /:userId/followers`
+- `GET /:userId/following`
+
+### Bookmarks (`/api/bookmark`)
+
+- `GET /`
+- `POST /:postId`
+- `DELETE /:postId`
+
+### Chat (`/api/chat`)
+
+- `GET /conversations`
+- `POST /conversations/:userId`
+- `GET /conversations/:conversationId/messages`
+- `POST /conversations/:conversationId/messages`
+- `GET /unread`
+
+### Realtime Socket Events (Chat)
+
+- Client emits: `join_conversation`, `leave_conversation`, `send_message`, `typing_start`, `typing_stop`, `conversation_seen`
+- Server emits: `new_message`, `conversation_typing`, `messages_read`
+
+## Testing
+
+Server tests are runnable with:
+
+```bash
+cd Server
+npm run test
+```
+
+Current tests cover key unit/integration behavior for:
+
+- `ApiError` structure,
+- error normalization and middleware responses,
+- request validation middleware,
+- realtime notification utility behavior.
+
+## License
+
+ISC

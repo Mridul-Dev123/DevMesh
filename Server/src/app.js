@@ -7,10 +7,12 @@ import likeRouter from './modules/like/like.route.js';
 import commentRouter from './modules/comment/comment.route.js';
 import followRouter from './modules/Follow/follow.route.js';
 import chatRouter from './modules/chat/chat.route.js';
+import bookmarkRouter from './modules/bookmark/bookmark.route.js';
 import cors from 'cors';
-import ApiError from './core/ApiError.js';
 import connectPgSimple from 'connect-pg-simple';
 import pkg from 'pg';
+import notFound from './middleware/notFound.js';
+import errorHandler from './middleware/errorHandler.js';
 
 const PgSession = connectPgSimple(session);
 
@@ -33,7 +35,10 @@ app.use((req, _res, next) => {
   const hasBody = !['GET', 'HEAD', 'DELETE'].includes(req.method);
   console.log(`\n[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   if (hasBody && req.body && Object.keys(req.body).length > 0) {
-    console.log('  Body:', JSON.stringify(req.body, null, 2));
+    const safeBody = { ...req.body };
+    if (typeof safeBody.password === 'string') safeBody.password = '[REDACTED]';
+    if (typeof safeBody.confirmPassword === 'string') safeBody.confirmPassword = '[REDACTED]';
+    console.log('  Body:', JSON.stringify(safeBody, null, 2));
   }
   next();
 });
@@ -77,31 +82,9 @@ app.use('/api/like', likeRouter);
 app.use('/api/comment', commentRouter);
 app.use('/api/follow', followRouter);
 app.use('/api/chat', chatRouter);
+app.use('/api/bookmark', bookmarkRouter);
 
-app.use((req, res, next) => {
-  next(new ApiError(404, 'Route not found'));
-});
-
-app.use((err, req, res, next) => {
-  void next;
-  console.error(err.stack);
-
-  if (err instanceof ApiError) {
-    return res.status(err.statusCode).json({
-      success: err.success,
-      message: err.message,
-      errors: err.errors,
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-    });
-  }
-
-  console.log('final Error', err);
-  return res.status(500).json({
-    success: false,
-    message: 'Internal Server Error',
-    errors: [],
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
-  });
-});
+app.use(notFound);
+app.use(errorHandler);
 
 export default app;

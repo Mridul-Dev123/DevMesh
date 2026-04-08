@@ -1,14 +1,18 @@
 import prisma from '../../config/prisma.js';
 
 /**
- * Transform a raw Prisma post (with a `likes` array) into a clean post
- * object with an `isLiked` boolean. The raw `likes` array is removed.
+ * Transform a raw Prisma post into a clean post object with derived
+ * per-user booleans for likes and bookmarks.
  * @param {object} post - Raw post from Prisma
- * @returns {object} Post with isLiked boolean
+ * @returns {object} Post with user-specific flags
  */
-const toPostWithIsLiked = (post) => {
-  const { likes, ...rest } = post;
-  return { ...rest, isLiked: Array.isArray(likes) && likes.length > 0 };
+const toPostWithUserState = (post) => {
+  const { likes, bookmarks, ...rest } = post;
+  return {
+    ...rest,
+    isLiked: Array.isArray(likes) && likes.length > 0,
+    isBookmarked: Array.isArray(bookmarks) && bookmarks.length > 0,
+  };
 };
 
 /**
@@ -31,6 +35,10 @@ const postInclude = (userId) => ({
     },
   },
   likes: {
+    where: { userId },
+    select: { userId: true },
+  },
+  bookmarks: {
     where: { userId },
     select: { userId: true },
   },
@@ -61,7 +69,7 @@ const getAllPosts = async ({ skip = 0, take = 10, userId }) => {
     skip,
     take,
   });
-  return posts.map(toPostWithIsLiked);
+  return posts.map(toPostWithUserState);
 };
 /**
  * Get paginated posts by a specific user, newest first
@@ -80,7 +88,7 @@ const getPostsByUser = async (authorId, { skip = 0, take = 20 }, currentUserId) 
     skip,
     take,
   });
-  return posts.map(toPostWithIsLiked);
+  return posts.map(toPostWithUserState);
 };
 
 /**
@@ -99,7 +107,7 @@ const findPostById = async (id, userId = null) => {
         },
   });
   if (!post) return null;
-  return userId ? toPostWithIsLiked(post) : post;
+  return userId ? toPostWithUserState(post) : post;
 };
 
 /**
@@ -143,15 +151,42 @@ const getFollowingFeed = async (userId, { skip = 0, take = 10 }) => {
     skip,
     take,
   });
-  return posts.map(toPostWithIsLiked);
+  return posts.map(toPostWithUserState);
+};
+
+/**
+ * Get posts bookmarked by the current user, most recently saved first.
+ * @param {string} userId - Current user ID
+ * @param {object} pagination
+ * @param {number} [pagination.skip=0] - Records to skip
+ * @param {number} [pagination.take=20] - Records to return
+ * @returns {Promise<Post[]>} Bookmarked posts with user-specific flags
+ */
+const getBookmarkedPosts = async (userId, { skip = 0, take = 20 } = {}) => {
+  const bookmarks = await prisma.bookmark.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    skip,
+    take,
+    include: {
+      post: {
+        include: postInclude(userId),
+      },
+    },
+  });
+
+  return bookmarks.map(({ post }) => toPostWithUserState(post));
 };
 
 export default {
   createPost,
   getAllPosts,
+  getBookmarkedPosts,
   getPostsByUser,
   findPostById,
   updatePost,
   deletePost,
   getFollowingFeed,
 };
+
+export { postInclude, toPostWithUserState };

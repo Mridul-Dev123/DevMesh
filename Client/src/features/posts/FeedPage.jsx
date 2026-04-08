@@ -1,38 +1,45 @@
 import { useState } from "react";
+
 import Navbar from "../../components/Navbar";
-import CreatePost from "./CreatePost";
 import PostCard from "../../components/PostCard";
+import { useSavedPosts } from "../bookmarks/bookmark.hooks";
+
+import CreatePost from "./CreatePost";
 import { useFeed, useFollowingFeed } from "./post.hooks";
 
 const TABS = [
     { key: "global", label: "Global" },
     { key: "following", label: "Following" },
+    { key: "saved", label: "Saved" },
 ];
 
 /**
- * FeedPage — the main landing page after login
+ * FeedPage - the main landing page after login
  */
 const FeedPage = () => {
     const [activeTab, setActiveTab] = useState("global");
 
     const globalFeed = useFeed();
     const followingFeed = useFollowingFeed();
+    const savedFeed = useSavedPosts();
 
     const { data: posts, isLoading, isError } =
-        activeTab === "global" ? globalFeed : followingFeed;
+        activeTab === "global"
+            ? globalFeed
+            : activeTab === "following"
+              ? followingFeed
+              : savedFeed;
 
     return (
         <div className="min-h-screen bg-gray-950 text-gray-100">
             <Navbar />
 
             <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-                {/* Page title */}
                 <div>
                     <h1 className="text-2xl font-bold text-gray-100">Feed</h1>
                     <p className="text-sm text-gray-500 mt-0.5">What the community is sharing</p>
                 </div>
 
-                {/* Tab switcher */}
                 <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
                     {TABS.map((tab) => (
                         <button
@@ -49,10 +56,8 @@ const FeedPage = () => {
                     ))}
                 </div>
 
-                {/* Composer */}
                 <CreatePost />
 
-                {/* Post list */}
                 {isLoading && (
                     <div className="space-y-4">
                         {[...Array(3)].map((_, i) => (
@@ -84,14 +89,20 @@ const FeedPage = () => {
 
                 {!isLoading && !isError && posts?.length === 0 && (
                     <div className="text-center py-16 space-y-2">
-                        <p className="text-4xl">🌱</p>
+                        <p className="text-4xl">Saved</p>
                         <p className="text-gray-300 font-medium">
-                            {activeTab === "following" ? "No posts from people you follow yet" : "Nothing here yet"}
+                            {activeTab === "following"
+                                ? "No posts from people you follow yet"
+                                : activeTab === "saved"
+                                  ? "No saved posts yet"
+                                  : "Nothing here yet"}
                         </p>
                         <p className="text-gray-500 text-sm">
                             {activeTab === "following"
                                 ? "Follow some users to see their posts here!"
-                                : "Be the first to share something!"}
+                                : activeTab === "saved"
+                                  ? "Save posts to keep useful ideas and references close."
+                                  : "Be the first to share something!"}
                         </p>
                     </div>
                 )}

@@ -154,6 +154,37 @@ const countUnread = (userId) => {
   });
 };
 
+/**
+ * Check whether two users mutually follow each other with ACCEPTED status.
+ * @param {string} userAId - First user ID
+ * @param {string} userBId - Second user ID
+ * @returns {Promise<boolean>} True when both follow relationships are ACCEPTED
+ */
+const isMutualFollow = async (userAId, userBId) => {
+  const [aToB, bToA] = await Promise.all([
+    prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: userAId,
+          followingId: userBId,
+        },
+      },
+      select: { status: true },
+    }),
+    prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: userBId,
+          followingId: userAId,
+        },
+      },
+      select: { status: true },
+    }),
+  ]);
+
+  return aToB?.status === 'ACCEPTED' && bToA?.status === 'ACCEPTED';
+};
+
 export default {
   findConversation,
   createConversation,
@@ -163,4 +194,5 @@ export default {
   createMessage,
   markMessagesRead,
   countUnread,
+  isMutualFollow,
 };

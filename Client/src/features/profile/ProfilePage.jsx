@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Avatar from '../../components/Avatar';
 import PostCard from '../../components/PostCard';
 import FollowButton from '../../components/FollowButton';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfile, useProfilePosts, useUpdateProfile } from './profile.hooks';
+import { useStartConversation } from '../chat/chat.hooks';
 
 const ProfilePage = () => {
 	const { id: profileId } = useParams();
+	const navigate = useNavigate();
 	const { user: currentUser } = useAuth();
 	const { data: profile, isLoading: profileLoading, isError: profileError } = useProfile(profileId);
 	const { data: posts, isLoading: postsLoading } = useProfilePosts(profileId);
 	const updateProfile = useUpdateProfile();
+	const startConversation = useStartConversation();
 
 	const isOwner = currentUser?.id === profileId;
 
@@ -67,6 +70,16 @@ const ProfilePage = () => {
 		});
 	};
 
+	const handleMessageClick = async () => {
+		if (!profileId || isOwner) return;
+		try {
+			const conversation = await startConversation.mutateAsync(profileId);
+			navigate(`/messages?conversation=${conversation.id}`);
+		} catch {
+			// Error toast is already handled in hook.
+		}
+	};
+
 	return (
 		<div className="min-h-screen bg-gray-950 text-gray-100">
 			<Navbar />
@@ -101,6 +114,15 @@ const ProfilePage = () => {
 									<div className="flex items-center gap-3">
 										<h1 className="text-2xl font-bold">@{profile.username}</h1>
 										<FollowButton targetUserId={profileId} />
+										{!isOwner && (
+											<button
+												onClick={handleMessageClick}
+												disabled={startConversation.isPending}
+												className="rounded-lg border border-cyan-700/60 bg-cyan-950/40 px-3 py-1.5 text-xs font-semibold text-cyan-200 transition-colors hover:border-cyan-500 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+											>
+												{startConversation.isPending ? 'Opening...' : 'Message'}
+											</button>
+										)}
 									</div>
 									<p className="text-sm text-gray-400 mt-1">{profile.bio || 'No bio yet.'}</p>
 

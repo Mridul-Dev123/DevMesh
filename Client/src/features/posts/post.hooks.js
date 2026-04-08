@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as postApi from "./post.api";
 import toast from "react-hot-toast";
+
+import * as postApi from "./post.api";
 
 /**
  * Fetch the global feed
@@ -49,8 +50,11 @@ export const useUpdatePost = () => {
 
     return useMutation({
         mutationFn: ({ id, data }) => postApi.updatePost(id, data),
-        onSuccess: () => {
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ["feed"] });
+            queryClient.invalidateQueries({ queryKey: ["feed", "following"] });
+            queryClient.invalidateQueries({ queryKey: ["feed", "saved"] });
+            queryClient.invalidateQueries({ queryKey: ["post", variables.id] });
             toast.success("Post updated.");
         },
         onError: () => {
@@ -67,8 +71,11 @@ export const useDeletePost = () => {
 
     return useMutation({
         mutationFn: postApi.deletePost,
-        onSuccess: () => {
+        onSuccess: (_data, id) => {
             queryClient.invalidateQueries({ queryKey: ["feed"] });
+            queryClient.invalidateQueries({ queryKey: ["feed", "following"] });
+            queryClient.invalidateQueries({ queryKey: ["feed", "saved"] });
+            queryClient.removeQueries({ queryKey: ["post", id] });
             toast.success("Post deleted.");
         },
         onError: () => {

@@ -9,6 +9,15 @@ import prisma from '../../config/prisma.js';
 const createLike = (userId, postId) => {
   return prisma.like.create({
     data: { userId, postId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          avatarUrl: true,
+        },
+      },
+    },
   });
 };
 

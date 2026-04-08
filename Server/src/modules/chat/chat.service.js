@@ -1,6 +1,30 @@
 import ApiError from '../../core/ApiError.js';
 import chatRepository from './chat.repository.js';
 
+const getOtherParticipantId = (conversation, userId) =>
+  conversation.participantA === userId ? conversation.participantB : conversation.participantA;
+
+const ensureMutualFollow = async (currentUserId, otherUserId) => {
+  const isMutual = await chatRepository.isMutualFollow(currentUserId, otherUserId);
+  if (!isMutual) {
+    throw new ApiError(403, 'You can only chat with users you mutually follow');
+  }
+};
+
+const assertConversationAccess = async (conversationId, userId) => {
+  const conversation = await chatRepository.findConversationById(conversationId);
+  if (!conversation) throw new ApiError(404, 'Conversation not found');
+
+  const isParticipant =
+    conversation.participantA === userId || conversation.participantB === userId;
+  if (!isParticipant) throw new ApiError(403, 'You are not a participant in this conversation');
+
+  const otherUserId = getOtherParticipantId(conversation, userId);
+  await ensureMutualFollow(userId, otherUserId);
+
+  return conversation;
+};
+
 /**
  * Get an existing conversation or create a new one between two users
  * @param {string} currentUserId - ID of the requesting user
@@ -12,6 +36,8 @@ const getOrCreateConversation = async (currentUserId, otherUserId) => {
   if (currentUserId === otherUserId) {
     throw new ApiError(400, 'You cannot start a conversation with yourself');
   }
+
+  await ensureMutualFollow(currentUserId, otherUserId);
 
   let conversation = await chatRepository.findConversation(currentUserId, otherUserId);
   if (!conversation) {
@@ -25,8 +51,17 @@ const getOrCreateConversation = async (currentUserId, otherUserId) => {
  * @param {string} userId - ID of the authenticated user
  * @returns {Promise<Conversation[]>} Conversations with participants and latest message
  */
-const getMyConversations = (userId) => {
-  return chatRepository.getUserConversations(userId);
+const getMyConversations = async (userId) => {
+  const conversations = await chatRepository.getUserConversations(userId);
+  const filtered = await Promise.all(
+    conversations.map(async (conversation) => {
+      const otherUserId = getOtherParticipantId(conversation, userId);
+      const isMutual = await chatRepository.isMutualFollow(userId, otherUserId);
+      return isMutual ? conversation : null;
+    })
+  );
+
+  return filtered.filter(Boolean);
 };
 
 /**
@@ -40,19 +75,20 @@ const getMyConversations = (userId) => {
  * @throws {ApiError} 403 - If user is not a participant
  * @returns {Promise<Message[]>} Paginated messages with sender info
  */
-const getMessages = async (conversationId, userId, { page = 1, limit = 30 } = {}) => {
-  const conversation = await chatRepository.findConversationById(conversationId);
-  if (!conversation) throw new ApiError(404, 'Conversation not found');
-
-  const isParticipant =
-    conversation.participantA === userId || conversation.participantB === userId;
-  if (!isParticipant) throw new ApiError(403, 'You are not a participant in this conversation');
-
+const getMessages = async (conversationId, userId, { page = 1, limit = 30 } = {}, io = null) => {
+  await assertConversationAccess(conversationId, userId);
   const skip = (page - 1) * Number(limit);
   const take = Number(limit);
 
   // Mark messages from the other side as read
-  await chatRepository.markMessagesRead(conversationId, userId);
+  const marked = await chatRepository.markMessagesRead(conversationId, userId);
+  if (io && marked.count > 0) {
+    io.to(conversationId).emit('messages_read', {
+      conversationId,
+      readerId: userId,
+      readAt: new Date().toISOString(),
+    });
+  }
 
   return chatRepository.getMessages(conversationId, { skip, take });
 };
@@ -71,12 +107,7 @@ const getMessages = async (conversationId, userId, { page = 1, limit = 30 } = {}
 const sendMessage = async (conversationId, senderId, content, io = null) => {
   if (!content || !content.trim()) throw new ApiError(400, 'Message content cannot be empty');
 
-  const conversation = await chatRepository.findConversationById(conversationId);
-  if (!conversation) throw new ApiError(404, 'Conversation not found');
-
-  const isParticipant =
-    conversation.participantA === senderId || conversation.participantB === senderId;
-  if (!isParticipant) throw new ApiError(403, 'You are not a participant in this conversation');
+  await assertConversationAccess(conversationId, senderId);
 
   const message = await chatRepository.createMessage(conversationId, senderId, content.trim());
 
@@ -97,10 +128,44 @@ const getUnreadCount = (userId) => {
   return chatRepository.countUnread(userId);
 };
 
+/**
+ * Mark a conversation as read for the given user and emit read-receipts in real time.
+ * @param {string} conversationId - ID of the conversation
+ * @param {string} userId - ID of the reader
+ * @param {import('socket.io').Server|null} [io=null] - Socket.io server instance
+ * @returns {Promise<{ count: number }>} Number of messages marked as read
+ */
+const markConversationRead = async (conversationId, userId, io = null) => {
+  await assertConversationAccess(conversationId, userId);
+
+  const marked = await chatRepository.markMessagesRead(conversationId, userId);
+  if (io && marked.count > 0) {
+    io.to(conversationId).emit('messages_read', {
+      conversationId,
+      readerId: userId,
+      readAt: new Date().toISOString(),
+    });
+  }
+  return marked;
+};
+
+/**
+ * Validate that a user can access a conversation (participant + mutual follow).
+ * @param {string} conversationId - ID of the conversation
+ * @param {string} userId - ID of the requesting user
+ * @returns {Promise<boolean>} True when access is allowed
+ */
+const canAccessConversation = async (conversationId, userId) => {
+  await assertConversationAccess(conversationId, userId);
+  return true;
+};
+
 export default {
   getOrCreateConversation,
   getMyConversations,
   getMessages,
   sendMessage,
   getUnreadCount,
+  markConversationRead,
+  canAccessConversation,
 };

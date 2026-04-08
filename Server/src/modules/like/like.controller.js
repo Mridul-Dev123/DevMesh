@@ -9,7 +9,7 @@ import likeService from './like.service.js';
  * @returns {200} { liked: true, likeCount: number }
  */
 const likePost = asyncHandler(async (req, res) => {
-  const data = await likeService.likePost(req.user.id, req.params.id);
+  const data = await likeService.likePost(req.user.id, req.params.id, req.app.get('io'));
 
   res.status(200).json(new ApiResponse(200, data, 'Post liked'));
 });

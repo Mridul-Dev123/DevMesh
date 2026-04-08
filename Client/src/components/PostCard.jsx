@@ -1,9 +1,12 @@
 import { Link } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+
 import { useDeletePost } from "../features/posts/post.hooks";
+import { useAuth } from "../hooks/useAuth";
+
 import Avatar from "./Avatar";
-import LikeButton from "./LikeButton";
+import BookmarkButton from "./BookmarkButton";
 import CommentList from "./CommentList";
+import LikeButton from "./LikeButton";
 
 /**
  * Format a date as a relative time string (e.g. "3 hours ago")
@@ -85,6 +88,10 @@ const PostCard = ({ post }) => {
                     postId={post.id}
                     count={post._count?.likes ?? 0}
                     isLiked={post.isLiked ?? false}
+                />
+                <BookmarkButton
+                    postId={post.id}
+                    isBookmarked={post.isBookmarked ?? false}
                 />
                 <CommentList
                     postId={post.id}

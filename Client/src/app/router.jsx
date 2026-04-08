@@ -8,9 +8,10 @@ const RegisterPage = lazy(() => import("../features/auth/RegisterPage.jsx"));
 const FeedPage = lazy(() => import("../features/posts/FeedPage.jsx"));
 const PostPage = lazy(() => import("../features/posts/PostPage.jsx"));
 const ProfilePage = lazy(() => import("../features/profile/ProfilePage.jsx"));
+const MessagesPage = lazy(() => import("../features/chat/MessagesPage.jsx"));
 
 const router = createBrowserRouter([
-    // Root → redirect to feed (ProtectedRoute will bounce to /login if not authed)
+    // Root -> redirect to feed (ProtectedRoute will bounce to /login if not authed)
     {
         path: "/",
         element: <Navigate to="/feed" replace />,
@@ -65,6 +66,16 @@ const router = createBrowserRouter([
             <ProtectedRoute>
                 <Suspense fallback={<div>Loading...</div>}>
                     <ProfilePage />
+                </Suspense>
+            </ProtectedRoute>
+        ),
+    },
+    {
+        path: "/messages",
+        element: (
+            <ProtectedRoute>
+                <Suspense fallback={<div>Loading...</div>}>
+                    <MessagesPage />
                 </Suspense>
             </ProtectedRoute>
         ),
