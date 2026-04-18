@@ -22,7 +22,11 @@ const sendFollowRequest = asyncHandler(async (req, res) => {
  * @returns {200} Updated follower count
  */
 const acceptFollowRequest = asyncHandler(async (req, res) => {
-  const data = await followService.acceptFollowRequest(req.user.id, req.params.userId);
+  const data = await followService.acceptFollowRequest(
+    req.user.id,
+    req.params.userId,
+    req.app.get('io')
+  );
 
   res.status(200).json(new ApiResponse(200, data, 'Follow request accepted'));
 });

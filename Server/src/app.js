@@ -1,5 +1,7 @@
 import express from 'express';
 import session from 'express-session';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import passport from './config/passport.js';
 import userRouter from './modules/user/user.route.js';
 import msgRouter from './modules/post/post.route.js';
@@ -15,9 +17,10 @@ import notFound from './middleware/notFound.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const PgSession = connectPgSimple(session);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
-
+app.use(express.static(path.resolve(__dirname, '../public')));
 app.use(
   cors({
     origin: process.env.CLIENT_URL || 'http://localhost:5173',

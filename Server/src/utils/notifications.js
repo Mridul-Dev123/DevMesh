@@ -1,6 +1,7 @@
 const notificationTypeMessages = {
   post_liked: 'liked your post',
   post_commented: 'commented on your post',
+  follow_request_accepted: 'accepted your follow request',
 };
 
 const toPostPreview = (content = '') => {
@@ -25,7 +26,26 @@ const buildPostInteractionNotification = ({ type, actor, post }) => {
     post: {
       id: post?.id || null,
       preview: postPreview,
+      likeCount: typeof post?._count?.likes === 'number' ? post._count.likes : null,
+      commentCount: typeof post?._count?.comments === 'number' ? post._count.comments : null,
     },
+    link: post?.id ? `/post/${post.id}` : null,
+    createdAt: new Date().toISOString(),
+  };
+};
+
+const buildFollowRequestAcceptedNotification = ({ actor }) => {
+  const actorName = actor?.username || 'Someone';
+
+  return {
+    type: 'follow_request_accepted',
+    message: `${actorName} accepted your follow request`,
+    actor: {
+      id: actor?.id || null,
+      username: actor?.username || 'Unknown',
+      avatarUrl: actor?.avatarUrl || null,
+    },
+    link: actor?.id ? `/profile/${actor.id}` : null,
     createdAt: new Date().toISOString(),
   };
 };
@@ -45,4 +65,9 @@ const emitNotificationToUser = (io, userId, payload) => {
   return true;
 };
 
-export { buildPostInteractionNotification, emitNotificationToUser, getUserRoom };
+export {
+  buildFollowRequestAcceptedNotification,
+  buildPostInteractionNotification,
+  emitNotificationToUser,
+  getUserRoom,
+};

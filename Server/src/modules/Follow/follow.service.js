@@ -1,5 +1,9 @@
 import ApiError from '../../core/ApiError.js';
 import followRepository from './follow.repository.js';
+import {
+  buildFollowRequestAcceptedNotification,
+  emitNotificationToUser,
+} from '../../utils/notifications.js';
 
 /**
  * Send a follow request from one user to another
@@ -32,7 +36,7 @@ const sendFollowRequest = async (followerId, followingId) => {
  * @throws {ApiError} 400 - If already accepted
  * @returns {Promise<{ followerCount: number }>}
  */
-const acceptFollowRequest = async (userId, followerId) => {
+const acceptFollowRequest = async (userId, followerId, io = null) => {
   const follow = await followRepository.findFollow(followerId, userId);
 
   if (!follow) {
@@ -43,9 +47,16 @@ const acceptFollowRequest = async (userId, followerId) => {
     throw new ApiError(400, 'Follow request already accepted');
   }
 
-  await followRepository.updateFollowStatus(followerId, userId, 'ACCEPTED');
+  const acceptedFollow = await followRepository.updateFollowStatus(followerId, userId, 'ACCEPTED');
 
   const followerCount = await followRepository.countFollowers(userId);
+
+  if (acceptedFollow.following?.id && acceptedFollow.follower?.id) {
+    const payload = buildFollowRequestAcceptedNotification({
+      actor: acceptedFollow.following,
+    });
+    emitNotificationToUser(io, acceptedFollow.follower.id, payload);
+  }
 
   return { followerCount };
 };

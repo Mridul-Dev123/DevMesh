@@ -1,5 +1,11 @@
 import prisma from '../../config/prisma.js';
 
+const notificationUserSelect = {
+  id: true,
+  username: true,
+  avatarUrl: true,
+};
+
 /**
  * Create a new follow record with PENDING status
  * @param {string} followerId - ID of the follower
@@ -39,6 +45,14 @@ const updateFollowStatus = (followerId, followingId, status) => {
       followerId_followingId: { followerId, followingId },
     },
     data: { status },
+    include: {
+      follower: {
+        select: notificationUserSelect,
+      },
+      following: {
+        select: notificationUserSelect,
+      },
+    },
   });
 };
 

@@ -38,7 +38,13 @@ const createComment = async (userId, postId, content, io = null) => {
     const payload = buildPostInteractionNotification({
       type: 'post_commented',
       actor: comment.author,
-      post,
+      post: {
+        ...post,
+        _count: {
+          ...post._count,
+          comments: commentCount,
+        },
+      },
     });
     emitNotificationToUser(io, post.author.id, payload);
   }

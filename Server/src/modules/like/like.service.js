@@ -29,7 +29,13 @@ const likePost = async (userId, postId, io = null) => {
     const payload = buildPostInteractionNotification({
       type: 'post_liked',
       actor: like.user,
-      post,
+      post: {
+        ...post,
+        _count: {
+          ...post._count,
+          likes: likeCount,
+        },
+      },
     });
     emitNotificationToUser(io, post.author.id, payload);
   }

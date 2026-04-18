@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as authApi from "./auth.api";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { clearNotifications } from "../notifications/notifications.hooks";
 
 export const useMe = () => {
     return useQuery({
@@ -53,6 +54,7 @@ export const useLogout = () => {
     return useMutation({
         mutationFn: authApi.logout,
         onSuccess: () => {
+            clearNotifications(queryClient);
             queryClient.removeQueries({ queryKey: ["me"] });
             toast.success("Logged out successfully.");
             navigate("/login", { replace: true });

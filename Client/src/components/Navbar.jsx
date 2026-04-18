@@ -2,6 +2,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useLogout } from "../features/auth/auth.hooks";
 import { useUnreadCount } from "../features/chat/chat.hooks";
 import { Link } from "react-router-dom";
+import NotificationBell from "./NotificationBell";
 
 const Navbar = () => {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ const Navbar = () => {
 
         {user ? (
           <div className="flex items-center gap-2 sm:gap-3">
+            <NotificationBell />
             <Link
               to="/messages"
               className="relative rounded-full border border-slate-700 bg-slate-900 p-2 text-slate-200 transition-colors hover:border-cyan-500 hover:text-cyan-200"
